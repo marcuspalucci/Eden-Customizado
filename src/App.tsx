@@ -156,7 +156,6 @@ export const App: React.FC = () => {
     theology?: string;
     exegesis?: string;
     devotional?: string;
-    banana?: string;
   }>({});
 
   // Library State
