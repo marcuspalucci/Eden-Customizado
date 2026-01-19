@@ -925,9 +925,32 @@ export const App: React.FC = () => {
         <div
           className="fixed bg-layer-2 border border-bible-border shadow-xl rounded-lg p-1.5 flex gap-1 z-[70] animate-in fade-in zoom-in duration-200"
           style={{ left: selectionPos.x, top: selectionPos.y, transform: 'translate(-50%, -100%)' }}
+          onMouseDown={(e) => e.preventDefault()} // Prevent losing selection on menu click
         >
           <button
-            onClick={addSelectionToNotes}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              // Get fresh selection text as fallback
+              const currentSelection = window.getSelection()?.toString() || selectionText;
+              if (currentSelection) {
+                const appendText = `\n> "${currentSelection}"\n`;
+                const updatedContent = noteContent + appendText;
+                setNoteContent(updatedContent);
+                setIsRightPanelOpen(true);
+                setActiveRightTab(RightPanelTab.NOTES);
+                setShowSelectionMenu(false);
+                window.getSelection()?.removeAllRanges();
+
+                // Save to Firestore for logged-in users
+                if (user?.email !== 'guest@dev.local' && auth.currentUser) {
+                  db.collection('users').doc(auth.currentUser.uid).collection('notes').doc('default').set(
+                    { content: updatedContent, updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
+                    { merge: true }
+                  ).catch(() => { });
+                }
+              }
+            }}
             className="p-2 hover:bg-bible-secondary rounded text-bible-accent transition-colors"
             title="Adicionar à Nota"
           >
@@ -935,8 +958,13 @@ export const App: React.FC = () => {
           </button>
           <div className="w-[1px] bg-bible-border mx-1"></div>
           <button
-            onClick={() => {
-              navigator.clipboard.writeText(selectionText);
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              const currentSelection = window.getSelection()?.toString() || selectionText;
+              if (currentSelection) {
+                navigator.clipboard.writeText(currentSelection);
+              }
               setShowSelectionMenu(false);
             }}
             className="p-2 hover:bg-bible-secondary rounded text-bible-text-light transition-colors"
@@ -945,7 +973,10 @@ export const App: React.FC = () => {
             <i className="fas fa-copy"></i>
           </button>
           <button
-            onClick={() => setShowSelectionMenu(false)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setShowSelectionMenu(false);
+            }}
             className="p-2 hover:bg-red-50 rounded text-red-400 transition-colors"
           >
             <i className="fas fa-times"></i>
