@@ -35,11 +35,18 @@ export const Header: React.FC<HeaderProps> = ({
   compareMode,
   onToggleCompare
 }) => {
-  const [verseInput, setVerseInput] = useState('');
   const { user, signOut } = useAuth();
   const { bibleRef, setBibleRef, translation, setTranslation } = useBible();
+
+  const [verseInput, setVerseInput] = useState('');
+  const [chapterInput, setChapterInput] = useState(bibleRef.chapter.toString());
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // Sync chapter input when bibleRef changes externally
+  React.useEffect(() => {
+    setChapterInput(bibleRef.chapter.toString());
+  }, [bibleRef.chapter]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,12 +77,26 @@ export const Header: React.FC<HeaderProps> = ({
     setBibleRef((prev: BibleReference) => ({ ...prev, book: bookName, chapter: 1 }));
   };
 
-  const handleChapterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const chapter = parseInt(e.target.value) || 1;
+  // Allow free typing - only update the local state
+  const handleChapterInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setChapterInput(e.target.value);
+  };
+
+  // Validate and apply chapter when leaving the field or pressing Enter
+  const applyChapterChange = () => {
+    const chapter = parseInt(chapterInput) || 1;
     const book = BIBLE_BOOKS.find((b) => b.name === bibleRef.book);
     const maxChapter = book?.chapters || 50;
     const validChapter = Math.min(Math.max(1, chapter), maxChapter);
+    setChapterInput(validChapter.toString());
     setBibleRef((prev: BibleReference) => ({ ...prev, chapter: validChapter }));
+  };
+
+  const handleChapterKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      applyChapterChange();
+      (e.target as HTMLInputElement).blur();
+    }
   };
 
   const handleTranslationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -127,10 +148,12 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Campo de Capítulo */}
           <div className="flex items-center shrink-0">
             <input
-              type="number"
-              value={bibleRef.chapter}
-              onChange={handleChapterChange}
-              min={1}
+              type="text"
+              inputMode="numeric"
+              value={chapterInput}
+              onChange={handleChapterInputChange}
+              onBlur={applyChapterChange}
+              onKeyDown={handleChapterKeyDown}
               className="w-12 text-center bg-bible-card border border-bible-border rounded-lg px-1 py-1 text-sm font-bold focus:border-bible-accent focus:outline-none shadow-sm"
             />
           </div>
@@ -396,10 +419,12 @@ export const Header: React.FC<HeaderProps> = ({
                 <div className="flex-1">
                   <label className="text-xs font-bold text-bible-text-light uppercase tracking-wider mb-1 block">Capítulo</label>
                   <input
-                    type="number"
-                    value={bibleRef.chapter}
-                    onChange={handleChapterChange}
-                    min={1}
+                    type="text"
+                    inputMode="numeric"
+                    value={chapterInput}
+                    onChange={handleChapterInputChange}
+                    onBlur={applyChapterChange}
+                    onKeyDown={handleChapterKeyDown}
                     className="w-full bg-bible-card border border-bible-border rounded-lg px-3 py-2 text-sm font-bold text-bible-text focus:outline-none focus:border-bible-accent text-center"
                   />
                 </div>
