@@ -512,7 +512,7 @@ export const App: React.FC = () => {
   ]);
 
   useEffect(() => {
-    const handleSelection = () => {
+    const handleSelection = (e: MouseEvent) => {
       const selection = window.getSelection();
       if (!selection || selection.toString().trim().length === 0) {
         setShowSelectionMenu(false);
@@ -525,14 +525,35 @@ export const App: React.FC = () => {
         setShowSelectionMenu(false);
         return;
       }
+
+      // Use mouse position for large selections, ensuring menu stays visible
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
-      setSelectionPos({ x: rect.left + rect.width / 2, y: rect.top - 10 });
+
+      // For multi-line or large selections, position near the mouse cursor
+      // For small selections, position at the center top of the selection
+      const isLargeSelection = rect.height > 50 || rect.width > 300;
+
+      let x: number, y: number;
+      if (isLargeSelection) {
+        // Position near mouse, but ensure it stays within viewport
+        x = Math.min(Math.max(e.clientX, 80), window.innerWidth - 80);
+        y = Math.max(e.clientY - 50, 60);
+      } else {
+        // Small selection - use center top of selection
+        x = rect.left + rect.width / 2;
+        y = Math.max(rect.top - 10, 60); // Ensure at least 60px from top
+      }
+
+      // Ensure menu doesn't go off-screen horizontally
+      x = Math.min(Math.max(x, 80), window.innerWidth - 80);
+
+      setSelectionPos({ x, y });
       setSelectionText(selection.toString());
       setShowSelectionMenu(true);
     };
-    document.addEventListener('mouseup', handleSelection);
-    return () => document.removeEventListener('mouseup', handleSelection);
+    document.addEventListener('mouseup', handleSelection as EventListener);
+    return () => document.removeEventListener('mouseup', handleSelection as EventListener);
   }, []);
 
   const saveHistory = async (action: string, details: string) => {
