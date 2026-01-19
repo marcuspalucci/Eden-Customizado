@@ -219,7 +219,31 @@ exports.getBibleContent = onCall(defaultFunctionOptions, async (request) => {
       const isPublicDomain = publicDomainTranslations.includes(translation.toUpperCase());
 
       let prompt;
-      if (isPublicDomain) {
+      const isStrongTranslation = translation.toLowerCase().includes('strong');
+
+      if (isStrongTranslation) {
+        // Formato especial para Almeida com Strong - inclui códigos Strong em cada palavra
+        prompt = `Generate the biblical text of ${book} chapter ${chapter} in Portuguese (Almeida style) WITH Strong's numbers.
+
+CRITICAL FORMAT REQUIREMENTS:
+1. EVERY significant word (nouns, verbs, adjectives, adverbs) MUST have its Strong's code immediately after it
+2. Format: Word<H####> for Hebrew (Old Testament) or Word<G####> for Greek (New Testament)
+3. NO spaces between the word and the angle bracket
+4. Articles, prepositions, and conjunctions don't need Strong codes
+
+EXAMPLE OUTPUT FORMAT:
+**1** No<H871> princípio<H7225> criou<H1254> Deus<H430> os céus<H8064> e a terra<H776>.
+**2** E a terra<H776> era<H1961> sem forma<H8414> e vazia<H922>...
+
+RULES:
+- Start directly with verse 1 (no introduction)
+- Each verse on its own line
+- Verse number in **bold** format: **1**, **2**, etc.
+- Use accurate Strong's Hebrew (H) or Greek (G) numbers
+- DO NOT include phrases like "Here is..." or "Sure!"
+
+Generate ${book} chapter ${chapter} now:`;
+      } else if (isPublicDomain) {
         prompt = `Provide ONLY the biblical text of ${book} chapter ${chapter} from the ${translation} translation.
 Format: Start directly with verse 1. Each verse on its own line with the verse number.
 DO NOT include any introduction, commentary, or phrases like "Here is..." or "Sure!".
@@ -600,6 +624,39 @@ exports.cleanOldCache = onCall(defaultFunctionOptions, async (request) => {
 
   } catch (error) {
     console.error('Erro ao limpar cache:', error);
+    throw new HttpsError('internal', error.message);
+  }
+});
+
+// 18. clearStrongCache (Limpar caches de Almeida com Strong para forçar regeneração)
+exports.clearStrongCache = onCall(defaultFunctionOptions, async (request) => {
+  const db = admin.firestore();
+
+  try {
+    const snapshot = await db.collection('bible_cache')
+      .where('translation', '==', 'Almeida com Strong')
+      .get();
+
+    let deletedCount = 0;
+    const batch = db.batch();
+
+    snapshot.forEach((doc) => {
+      batch.delete(doc.ref);
+      deletedCount++;
+    });
+
+    if (deletedCount > 0) {
+      await batch.commit();
+    }
+
+    return {
+      success: true,
+      deleted: deletedCount,
+      message: `Cache Strong limpo: ${deletedCount} entradas deletadas`
+    };
+
+  } catch (error) {
+    console.error('Erro ao limpar cache Strong:', error);
     throw new HttpsError('internal', error.message);
   }
 });

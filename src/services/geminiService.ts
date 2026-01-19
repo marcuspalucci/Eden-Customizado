@@ -288,3 +288,21 @@ export const askLibraryAgent = async (query: string, resources: LibraryResource[
     return data.text || 'Error.';
   } catch (err) { throw handleApiError(err, 'askLibraryAgent'); }
 };
+
+// Utility: Clear Strong cache to force regeneration with new format
+export const clearStrongCache = async (): Promise<{ deleted: number; message: string }> => {
+  try {
+    const clearCacheFn = functions.httpsCallable('clearStrongCache');
+    const result = await clearCacheFn({});
+    const data = result.data as { success: boolean; deleted: number; message: string };
+    // Also clear in-memory session cache for Strong translations
+    const keysToDelete: string[] = [];
+    sessionCache.forEach((_, key) => {
+      if (key.includes('Almeida_com_Strong') || key.includes('Strong')) {
+        keysToDelete.push(key);
+      }
+    });
+    keysToDelete.forEach(key => sessionCache.delete(key));
+    return { deleted: data.deleted, message: data.message };
+  } catch (err) { throw handleApiError(err, 'clearStrongCache'); }
+};
