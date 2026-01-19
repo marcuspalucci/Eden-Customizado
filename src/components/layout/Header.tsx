@@ -311,6 +311,15 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Ações Mobile/Tablet - Sempre visíveis */}
           <div className="flex lg:hidden items-center bg-layer-2 rounded-xl border border-bible-border shadow-lg p-1 space-x-1">
+            {/* Botão Busca Mobile */}
+            <button
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              className="p-2 rounded-lg transition-all text-bible-text hover:bg-bible-hover"
+              title="Pesquisar"
+            >
+              <i className="fas fa-search text-sm"></i>
+            </button>
+
             {/* Botão Ferramentas */}
             <button
               onClick={onOpenRightPanel}
