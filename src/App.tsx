@@ -405,16 +405,28 @@ export const App: React.FC = () => {
   const handleParallelClick = useCallback((ref: string) => {
     const match = ref.match(/^(.*?)\s+(\d+):(\d+).*$/);
     if (match) {
-      const [, book, chapter] = match;
-      const bookObj = BIBLE_BOOKS.find(
-        (b) =>
-          b.name === book.trim() ||
-          b.nameEn === book.trim() ||
-          b.nameEs === book.trim() ||
-          Object.keys(ABBREVIATION_MAP).find(
-            (k) => ABBREVIATION_MAP[k] === book.trim() || k === book.trim()
-          )
-      );
+      const [, bookRaw, chapter] = match;
+      const targetBook = bookRaw.trim().toLowerCase();
+
+      const bookObj = BIBLE_BOOKS.find((b) => {
+        // 1. Verifica nomes exatos (case insensitive)
+        if (
+          b.name.toLowerCase() === targetBook ||
+          b.nameEn.toLowerCase() === targetBook ||
+          b.nameEs.toLowerCase() === targetBook
+        ) return true;
+
+        // 2. Verifica abreviações
+        // Itera sobre as chaves do mapa (ex: 'gn', 'at')
+        const abbrKey = Object.keys(ABBREVIATION_MAP).find(k => k.toLowerCase() === targetBook);
+
+        // Se encontrou a chave (ex: achou 'gn' para 'Gn'), verifica se o nome do livro (b.name) bate com o valor mapeado ('Gênesis')
+        if (abbrKey) {
+          return ABBREVIATION_MAP[abbrKey] === b.name;
+        }
+
+        return false;
+      });
 
       if (bookObj) {
         setSecondaryBibleRef({
@@ -423,6 +435,8 @@ export const App: React.FC = () => {
           translation: secondaryTranslation
         });
         setCompareMode(true);
+      } else {
+        console.warn(`Parallel reference book not found: ${bookRaw}`);
       }
     }
   }, [secondaryTranslation, setSecondaryBibleRef, setCompareMode]);

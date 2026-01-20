@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import { ABBREVIATION_MAP, BIBLE_BOOKS } from '../utils/constants';
 
 interface SimpleMarkdownProps {
@@ -6,6 +6,40 @@ interface SimpleMarkdownProps {
   onParallelClick?: (ref: string) => void;
   onStrongClick?: (word: string, code: string) => void;
 }
+
+const ParallelList = ({ refs, onParallelClick }: { refs: string[], onParallelClick: (ref: string) => void }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (refs.length === 0) return null;
+
+  return (
+    <div className="mb-4 -mt-1 ml-1">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 text-xs font-bold text-bible-text-light hover:text-bible-accent transition-colors py-1 px-2 -ml-2 rounded-lg hover:bg-bible-secondary"
+      >
+        <i className={`fas fa-chevron-${isOpen ? 'down' : 'right'} text-[10px]`}></i>
+        <i className="fas fa-link text-[10px]"></i>
+        {refs.length} Referências Cruzadas
+      </button>
+
+      {isOpen && (
+        <div className="flex flex-wrap gap-2 items-center mt-2 pl-2 border-l-2 border-bible-accent/20 animate-in fade-in slide-in-from-top-1 duration-200">
+          {refs.map((ref, idx) => (
+            <button
+              key={idx}
+              onClick={() => onParallelClick(ref)}
+              className="px-2 py-1 rounded bg-bible-secondary border border-bible-border text-xs text-bible-accent hover:text-white hover:bg-bible-accent transition-all font-mono"
+              title="Abrir em modo de comparação"
+            >
+              <i className="fas fa-columns mr-1 text-[10px]"></i> {ref}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const SimpleMarkdown = memo(({ text, onParallelClick, onStrongClick }: SimpleMarkdownProps) => {
   if (!text) return null;
@@ -48,26 +82,10 @@ const SimpleMarkdown = memo(({ text, onParallelClick, onStrongClick }: SimpleMar
       const refs = line
         .replace(/[()]/g, '')
         .split(';')
-        .map((s) => s.trim());
-      return (
-        <div key={i} className="mb-6 -mt-2 ml-1">
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs font-bold text-bible-text-light uppercase tracking-wider mr-1">
-              Paralelos:
-            </span>
-            {refs.map((ref, idx) => (
-              <button
-                key={idx}
-                onClick={() => onParallelClick(ref)}
-                className="px-2 py-0.5 rounded bg-bible-secondary border border-bible-border text-xs text-bible-accent hover:text-white hover:bg-bible-accent transition-all font-mono"
-                title="Abrir em modo de comparação"
-              >
-                <i className="fas fa-columns mr-1 text-[10px]"></i> {ref}
-              </button>
-            ))}
-          </div>
-        </div>
-      );
+        .map((s) => s.trim())
+        .filter(s => s.length > 0);
+
+      return <ParallelList key={i} refs={refs} onParallelClick={onParallelClick} />;
     }
 
     const parts = line.split(/(\*\*.*?\*\*)/g);

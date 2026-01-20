@@ -246,12 +246,22 @@ Generate ${book} chapter ${chapter} now:`;
       } else if (isPublicDomain) {
         prompt = `Provide ONLY the biblical text of ${book} chapter ${chapter} from the ${translation} translation.
 Format: Start directly with verse 1. Each verse on its own line with the verse number.
+After relevant verses, include cross-references in this format: (Book X:Y; Book Z:W)
 DO NOT include any introduction, commentary, or phrases like "Here is..." or "Sure!".
 Output ONLY the verses in ${getLangName(lang)} if different from the original.`;
       } else {
         // Para traduções modernas, solicitar resumo/paráfrase para evitar copyright
         prompt = `Provide ONLY the biblical text of ${book} chapter ${chapter} in the style of the ${translation} translation.
-Format: Start directly with verse 1. Each verse numbered on its own line.
+Format: 
+- Start directly with verse 1
+- Each verse numbered on its own line with **bold** verse numbers like **1**, **2**, etc.
+- After relevant verses that have parallel passages, include cross-references in this format on the next line: (Book X:Y; Book Z:W)
+
+Example:
+**1** No princípio, Deus criou os céus e a terra.
+(João 1:1-3; Salmos 33:6)
+**2** A terra era sem forma e vazia...
+
 DO NOT include any introduction, commentary, or phrases like "Here is..." or "Sure!".
 Output ONLY the verses in ${getLangName(lang)}.`;
       }
