@@ -8,6 +8,8 @@ interface ExegesisViewProps {
   setInput: (val: string) => void;
   onAnalyze: () => void;
   onReset: () => void;
+  onGenerate?: () => void;
+  bookChapter?: string;
 }
 
 export const ExegesisView: React.FC<ExegesisViewProps> = ({
@@ -16,7 +18,9 @@ export const ExegesisView: React.FC<ExegesisViewProps> = ({
   input,
   setInput,
   onAnalyze,
-  onReset
+  onReset,
+  onGenerate,
+  bookChapter
 }) => {
   return (
     <>
@@ -48,7 +52,13 @@ export const ExegesisView: React.FC<ExegesisViewProps> = ({
         </div>
       </div>
 
-      <AnalysisView loading={loading} content={content} type="exegesis" />
+      <AnalysisView
+        loading={loading}
+        content={content}
+        type="exegesis"
+        onGenerate={onGenerate}
+        bookChapter={bookChapter}
+      />
     </>
   );
 };

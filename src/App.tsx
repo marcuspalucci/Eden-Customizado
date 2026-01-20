@@ -265,53 +265,16 @@ export const App: React.FC = () => {
 
     // Bloco VISUALS removido - funcionalidade Visual desabilitada
     if (tab === TabView.LOCATIONS && !locationResult) {
-      setLoading((prev: LoadingState) => ({ ...prev, locations: true }));
-      try {
-        const res = await findBiblicalLocations(
-          bibleRef.book,
-          bibleRef.chapter,
-          bibleText,
-          user?.age,
-          currentLang
-        );
-        setLocationResult(res);
-      } catch (e) {
-        handleError(e);
-      } finally {
-        setLoading((prev: LoadingState) => ({ ...prev, locations: false }));
-      }
+      // Geração sob demanda - não gera automaticamente
+      // O usuário precisa clicar no botão "Gerar Mapa" na view
     }
     if (tab === TabView.STUDY_GUIDE && !studyGuideContent) {
-      setLoading((prev: LoadingState) => ({ ...prev, studyGuide: true }));
-      try {
-        const res = await generateStudyGuide(
-          `${bibleRef.book} ${bibleRef.chapter}`,
-          bibleText,
-          user?.age,
-          currentLang
-        );
-        setStudyGuideContent(res);
-      } catch (e) {
-        handleError(e);
-      } finally {
-        setLoading((prev: LoadingState) => ({ ...prev, studyGuide: false }));
-      }
+      // Geração sob demanda - não gera automaticamente
+      // O usuário precisa clicar no botão "Gerar Estudo" na view
     }
     if (tab === TabView.THEOLOGY && !theologyContent) {
-      setLoading((prev: LoadingState) => ({ ...prev, theology: true }));
-      try {
-        const res = await generateTheologyAnalysis(
-          bibleRef.book,
-          bibleRef.chapter,
-          bibleText,
-          currentLang
-        );
-        setTheologyContent(res);
-      } catch (e) {
-        handleError(e);
-      } finally {
-        setLoading((prev: LoadingState) => ({ ...prev, theology: false }));
-      }
+      // Geração sob demanda - não gera automaticamente
+      // O usuário precisa clicar no botão "Gerar Análise" na view
     }
     if (tab === TabView.THEMATIC_STUDY && !thematicStudyContent) {
       setLoading((prev: LoadingState) => ({ ...prev, thematicStudy: true }));
@@ -329,19 +292,8 @@ export const App: React.FC = () => {
       }
     }
     if (tab === TabView.EXEGESIS && !exegesisContent) {
-      setLoading((prev: LoadingState) => ({ ...prev, exegesis: true }));
-      try {
-        const res = await generateExegesisAnalysis(
-          `${bibleRef.book} ${bibleRef.chapter}`,
-          bibleText,
-          currentLang
-        );
-        setExegesisContent(res);
-      } catch (e) {
-        handleError(e);
-      } finally {
-        setLoading((prev: LoadingState) => ({ ...prev, exegesis: false }));
-      }
+      // Geração sob demanda - não gera automaticamente
+      // O usuário precisa clicar no botão "Gerar Exegese" na view
     }
     if (tab === TabView.INTERLINEAR && !interlinearData) {
       handleLoadMoreInterlinear(true);
@@ -380,6 +332,75 @@ export const App: React.FC = () => {
       setLoading((prev) => ({ ...prev, search: false }));
     }
   }, [searchQuery, currentLang, handleError]);
+
+  // === FUNÇÕES DE GERAÇÃO SOB DEMANDA ===
+  const handleGenerateLocations = useCallback(async () => {
+    setLoading((prev: LoadingState) => ({ ...prev, locations: true }));
+    try {
+      const res = await findBiblicalLocations(
+        bibleRef.book,
+        bibleRef.chapter,
+        bibleText,
+        user?.age,
+        currentLang
+      );
+      setLocationResult(res);
+    } catch (e) {
+      handleError(e);
+    } finally {
+      setLoading((prev: LoadingState) => ({ ...prev, locations: false }));
+    }
+  }, [bibleRef.book, bibleRef.chapter, bibleText, user?.age, currentLang, handleError]);
+
+  const handleGenerateStudyGuide = useCallback(async () => {
+    setLoading((prev: LoadingState) => ({ ...prev, studyGuide: true }));
+    try {
+      const res = await generateStudyGuide(
+        `${bibleRef.book} ${bibleRef.chapter}`,
+        bibleText,
+        user?.age,
+        currentLang
+      );
+      setStudyGuideContent(res);
+    } catch (e) {
+      handleError(e);
+    } finally {
+      setLoading((prev: LoadingState) => ({ ...prev, studyGuide: false }));
+    }
+  }, [bibleRef.book, bibleRef.chapter, bibleText, user?.age, currentLang, handleError]);
+
+  const handleGenerateTheology = useCallback(async () => {
+    setLoading((prev: LoadingState) => ({ ...prev, theology: true }));
+    try {
+      const res = await generateTheologyAnalysis(
+        bibleRef.book,
+        bibleRef.chapter,
+        bibleText,
+        currentLang
+      );
+      setTheologyContent(res);
+    } catch (e) {
+      handleError(e);
+    } finally {
+      setLoading((prev: LoadingState) => ({ ...prev, theology: false }));
+    }
+  }, [bibleRef.book, bibleRef.chapter, bibleText, currentLang, handleError]);
+
+  const handleGenerateExegesis = useCallback(async () => {
+    setLoading((prev: LoadingState) => ({ ...prev, exegesis: true }));
+    try {
+      const res = await generateExegesisAnalysis(
+        `${bibleRef.book} ${bibleRef.chapter}`,
+        bibleText,
+        currentLang
+      );
+      setExegesisContent(res);
+    } catch (e) {
+      handleError(e);
+    } finally {
+      setLoading((prev: LoadingState) => ({ ...prev, exegesis: false }));
+    }
+  }, [bibleRef.book, bibleRef.chapter, bibleText, currentLang, handleError]);
 
   const handleParallelClick = useCallback((ref: string) => {
     const match = ref.match(/^(.*?)\s+(\d+):(\d+).*$/);
@@ -844,6 +865,8 @@ export const App: React.FC = () => {
                             customQuery={customMapQuery}
                             onQueryChange={setCustomMapQuery}
                             onSearch={handleCustomMapGeneration}
+                            onGenerate={handleGenerateLocations}
+                            bookChapter={`${bibleRef.book} ${bibleRef.chapter}`}
                           />
                         )}
                         {/* VisualsView removido - funcionalidade Visual desabilitada */}
@@ -863,6 +886,8 @@ export const App: React.FC = () => {
                             setInput={setExegesisInput}
                             onAnalyze={handleCustomExegesis}
                             onReset={handleResetExegesis}
+                            onGenerate={handleGenerateExegesis}
+                            bookChapter={`${bibleRef.book} ${bibleRef.chapter}`}
                           />
                         )}
                         {activeTab === TabView.THEOLOGY && (
@@ -870,6 +895,8 @@ export const App: React.FC = () => {
                             loading={loading.theology}
                             content={theologyContent}
                             type="theology"
+                            onGenerate={handleGenerateTheology}
+                            bookChapter={`${bibleRef.book} ${bibleRef.chapter}`}
                           />
                         )}
                         {activeTab === TabView.STUDY_GUIDE && (
@@ -877,6 +904,8 @@ export const App: React.FC = () => {
                             loading={loading.studyGuide}
                             content={studyGuideContent}
                             type="studyGuide"
+                            onGenerate={handleGenerateStudyGuide}
+                            bookChapter={`${bibleRef.book} ${bibleRef.chapter}`}
                           />
                         )}
                       </div>

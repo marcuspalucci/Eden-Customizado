@@ -8,6 +8,8 @@ interface LocationsViewProps {
   customQuery: string;
   onQueryChange: (val: string) => void;
   onSearch: () => void;
+  onGenerate?: () => void;
+  bookChapter?: string;
 }
 
 export const LocationsView: React.FC<LocationsViewProps> = ({
@@ -15,10 +17,54 @@ export const LocationsView: React.FC<LocationsViewProps> = ({
   result,
   customQuery,
   onQueryChange,
-  onSearch
+  onSearch,
+  onGenerate,
+  bookChapter
 }) => {
   const { t } = useLanguage();
   const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+
+  // Show generate button when no result and not loading
+  if (!result && !loading && onGenerate) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="bg-bible-card border border-bible-border rounded-xl p-8 text-center max-w-md shadow-lg">
+          <div className="w-16 h-16 bg-bible-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i className="fas fa-map-location-dot text-2xl text-bible-accent"></i>
+          </div>
+          <h3 className="text-xl font-bold text-bible-text mb-2">Mapas Bíblicos</h3>
+          {bookChapter && (
+            <p className="text-bible-text-light mb-4 text-sm">{bookChapter}</p>
+          )}
+          <p className="text-bible-text-light mb-6">Visualize os locais mencionados neste capítulo em um mapa gerado por IA</p>
+          <button
+            onClick={onGenerate}
+            className="bg-bible-accent hover:bg-bible-accent-hover text-white font-bold py-3 px-6 rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95"
+          >
+            <i className="fas fa-map-location-dot mr-2"></i>
+            Gerar Mapa
+          </button>
+        </div>
+
+        {/* Custom search section below */}
+        <div className="mt-8 w-full max-w-md">
+          <p className="text-sm text-bible-text-light mb-2 text-center">Ou pesquise um local específico:</p>
+          <div className="flex gap-2">
+            <input
+              value={customQuery}
+              onChange={(e) => onQueryChange(e.target.value)}
+              className="border border-bible-border p-2 rounded flex-1 bg-bible-card text-bible-text"
+              placeholder={t('maps')}
+              onKeyDown={(e) => e.key === 'Enter' && onSearch()}
+            />
+            <button onClick={onSearch} className="bg-bible-accent text-white px-4 rounded">
+              Ir
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -83,3 +129,4 @@ export const LocationsView: React.FC<LocationsViewProps> = ({
     </div>
   );
 };
+
