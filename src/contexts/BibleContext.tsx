@@ -25,13 +25,54 @@ interface BibleContextData {
 
 const BibleContext = createContext<BibleContextData>({} as BibleContextData);
 
-export const BibleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // Estado único da referência (incluindo tradução)
-  const [bibleRef, setBibleRefState] = useState<BibleReference>({
+const READING_POSITION_KEY = 'eden_last_reading_position';
+
+// Load saved reading position from localStorage
+const loadSavedPosition = (): BibleReference => {
+  try {
+    const saved = localStorage.getItem(READING_POSITION_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Validate the saved data
+      if (parsed.book && typeof parsed.chapter === 'number' && parsed.translation) {
+        // Verify book exists
+        const bookExists = BIBLE_BOOKS.some(b => b.name === parsed.book);
+        if (bookExists) {
+          return {
+            book: parsed.book,
+            chapter: parsed.chapter,
+            translation: parsed.translation
+          };
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Error loading saved reading position:', e);
+  }
+  // Default fallback
+  return {
     book: 'Gênesis',
     chapter: 1,
     translation: 'NVI'
-  });
+  };
+};
+
+export const BibleProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Estado único da referência (incluindo tradução) - carrega posição salva
+  const [bibleRef, setBibleRefState] = useState<BibleReference>(loadSavedPosition);
+
+  // Salvar posição sempre que mudar
+  useEffect(() => {
+    try {
+      localStorage.setItem(READING_POSITION_KEY, JSON.stringify({
+        book: bibleRef.book,
+        chapter: bibleRef.chapter,
+        translation: bibleRef.translation
+      }));
+    } catch (e) {
+      console.warn('Error saving reading position:', e);
+    }
+  }, [bibleRef.book, bibleRef.chapter, bibleRef.translation]);
 
   // Helper para expor 'setBibleRef'
   const setBibleRef: React.Dispatch<React.SetStateAction<BibleReference>> = (refOrFn) => {
