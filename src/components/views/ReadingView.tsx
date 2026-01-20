@@ -34,8 +34,6 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
     setSecondaryTranslation
   } = useBible();
 
-  const isSplit = compareMode; // Only split internally if compare mode. External split handles itself via Flex.
-
   // Width logic:
   // If external split (isSidePanelOpen), container is flex item and should take available width.
   // ResizableSplitView will fill 100% of this container.

@@ -26,6 +26,32 @@ interface AudioContextType {
 
 const AudioContext = createContext<AudioContextType | undefined>(undefined);
 
+// Wake Lock helper to keep screen on during audio playback
+let wakeLock: WakeLockSentinel | null = null;
+
+const requestWakeLock = async () => {
+  try {
+    if ('wakeLock' in navigator) {
+      wakeLock = await navigator.wakeLock.request('screen');
+      logger.log('Wake Lock activated - screen will stay on');
+    }
+  } catch (err) {
+    logger.warn('Wake Lock not available:', err);
+  }
+};
+
+const releaseWakeLock = async () => {
+  if (wakeLock) {
+    try {
+      await wakeLock.release();
+      wakeLock = null;
+      logger.log('Wake Lock released');
+    } catch (err) {
+      logger.warn('Wake Lock release failed:', err);
+    }
+  }
+};
+
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { bibleRef } = useBible();
   const { user } = useAuth();
@@ -56,8 +82,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
 
-    // Fallback interval logic omitted for brevity as main event usually works,
-    // but included in original. Re-adding minimal fallback.
     const interval = setInterval(() => {
       const available = window.speechSynthesis.getVoices();
       if (available.length > 0) {
@@ -67,6 +91,17 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 500);
     return () => clearInterval(interval);
   }, []);
+
+  // Re-acquire wake lock when tab becomes visible again (handles screen lock/unlock)
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isSpeaking) {
+        await requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isSpeaking]);
 
   const cleanTextForSpeech = useCallback((text: string): string => {
     if (!text) return '';
@@ -81,7 +116,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       .trim();
   }, []);
 
-  // Mapeamento de vozes preferidas por idioma (priorizando vozes nativas de alta qualidade)
   const PREFERRED_VOICE_LANGS: Record<string, string[]> = {
     pt: ['pt-BR', 'pt-PT', 'pt'],
     en: ['en-US', 'en-GB', 'en-AU', 'en'],
@@ -92,13 +126,11 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const preferredLangs = PREFERRED_VOICE_LANGS[targetLang] || [targetLang];
 
     for (const langCode of preferredLangs) {
-      // Priorizar vozes que NÃO sejam "compact" ou de baixa qualidade
       const qualityVoice = availableVoices.find(
         (v) => v.lang === langCode && !v.name.toLowerCase().includes('compact')
       );
       if (qualityVoice) return qualityVoice;
 
-      // Fallback para qualquer voz com esse código de idioma
       const anyVoice = availableVoices.find((v) => v.lang === langCode);
       if (anyVoice) return anyVoice;
     }
@@ -110,6 +142,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     window.speechSynthesis.cancel();
     setIsSpeaking(false);
     setPlayingSource(null);
+    releaseWakeLock();
   }, []);
 
   const handleSpeak = useCallback(
@@ -122,6 +155,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       window.speechSynthesis.cancel();
       setIsPreparingAudio(true);
       setPlayingSource(sourceId);
+
+      // Request Wake Lock to keep screen on
+      await requestWakeLock();
 
       let finalSpeechText = cleanTextForSpeech(textToSpeak);
       const targetLang = audioTargetLang || currentLang;
@@ -171,11 +207,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       utterance.onend = () => {
         setIsSpeaking(false);
         setPlayingSource(null);
+        releaseWakeLock();
       };
       utterance.onerror = (e) => {
         if (e.error === 'interrupted' || e.error === 'canceled') return;
         setIsSpeaking(false);
         setPlayingSource(null);
+        releaseWakeLock();
       };
 
       speechRef.current = utterance;

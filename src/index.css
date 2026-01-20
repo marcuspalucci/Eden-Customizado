@@ -394,3 +394,43 @@ code {
 .bg-layer-3 {
   background-color: var(--color-layer-3);
 }
+
+/* ================================
+   🔊 VERSE READING HIGHLIGHT
+   ================================ */
+
+/* Highlight for currently reading verse */
+.reading-highlight {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 235, 59, 0.4) 0%,
+    rgba(255, 235, 59, 0.2) 100%
+  );
+  border-left: 3px solid #ffc107;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+}
+
+/* Dark mode highlight */
+:root.dark .reading-highlight {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 193, 7, 0.3) 0%,
+    rgba(255, 193, 7, 0.15) 100%
+  );
+  border-left-color: #ffca28;
+}
+
+/* Subtle pulse animation for current verse */
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 2s ease-in-out infinite;
+}
