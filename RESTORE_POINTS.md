@@ -13,28 +13,26 @@ git reset --hard <hash>
 
 ## Histórico
 
-### ✅ v1.2 - Deploy Vercel + Documentação
+### ✅ v1.3 - Correção de Paralelos + UI Limpa
+**Hash:** `17cd5ae`  
+**Data:** 2026-01-20  
+**Comando:** `git reset --hard 17cd5ae`
+
+**Melhorias:**
+- 🐛 **Correção Crítica:** Referências agora abrem o livro correto (antes clicava em "Salmos" e abria "Gênesis")
+- 🎨 **UI:** Referências cruzadas agora ficam colapsadas ("🔗 2 Referências") para não poluir a tela
+- ⚙️ **Backend:** Prompt atualizado para gerar referências cruzadas corretamente
+
+---
+
+### ✅ v1.2 - Deploy Vercel (Leitura por Voz)
 **Hash:** `64446f4`  
 **Data:** 2026-01-20  
 **Comando:** `git reset --hard 64446f4`
 
 **Funcionalidades:**
-- Tudo da v1.1 + documentação de pontos de restauração
-- Deploy em: https://eden-de-volta-ao-principio.vercel.app
-
----
-
-### ✅ v1.1 - Leitura por Voz Completa
-**Hash:** `7667119`  
-**Data:** 2026-01-20  
-**Comando:** `git reset --hard 7667119`
-
-**Funcionalidades:**
-- Leitura por versículo com destaque amarelo
-- Auto-scroll suave acompanhando leitura
-- Wake Lock (tela não desliga no celular)
-- Velocidade ajustável (0.5x a 2x)
-- Idioma com tradução real (PT/EN/ES)
+- Leitura por versículo com destaque, auto-scroll, velocidade e idioma
+- Deploy público Vercel
 
 ---
 
@@ -50,10 +48,4 @@ git reset --hard <hash>
 ## Links Importantes
 
 - **Produção:** https://eden-de-volta-ao-principio.vercel.app
-- **Firebase:** https://gen-lang-client-0295226702.web.app
 
----
-
-## Próximos Pontos
-
-_Novos pontos de restauração serão adicionados aqui conforme o projeto evolui._
