@@ -13,6 +13,17 @@ git reset --hard <hash>
 
 ## Histórico
 
+### ✅ v1.2 - Deploy Vercel + Documentação
+**Hash:** `64446f4`  
+**Data:** 2026-01-20  
+**Comando:** `git reset --hard 64446f4`
+
+**Funcionalidades:**
+- Tudo da v1.1 + documentação de pontos de restauração
+- Deploy em: https://eden-de-volta-ao-principio.vercel.app
+
+---
+
 ### ✅ v1.1 - Leitura por Voz Completa
 **Hash:** `7667119`  
 **Data:** 2026-01-20  
@@ -33,6 +44,13 @@ git reset --hard <hash>
 **Comando:** `git reset --hard 1e98a87`
 
 **Estado:** Versão estável antes das modificações de leitura por voz.
+
+---
+
+## Links Importantes
+
+- **Produção:** https://eden-de-volta-ao-principio.vercel.app
+- **Firebase:** https://gen-lang-client-0295226702.web.app
 
 ---
 
