@@ -245,7 +245,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenRightPanel}
               className={`p-2 rounded-lg transition-all ${isRightPanelOpen ? 'bg-bible-accent text-white shadow-md' : 'text-bible-text hover:bg-bible-hover'}`}
-              title="Ferramentas"
+              title={t('tools')}
             >
               <i className="fas fa-tools text-sm"></i>
             </button>
@@ -305,7 +305,7 @@ export const Header: React.FC<HeaderProps> = ({
                             className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-bible-text hover:bg-bible-hover rounded-lg transition-colors text-left"
                           >
                             <i className="fas fa-cog w-5 text-bible-text-light opacity-60 text-center"></i>
-                            <span>Configurações</span>
+                            <span>{t('settings')}</span>
                           </button>
                           <div className="h-px bg-bible-border my-1 mx-2"></div>
                           <button
@@ -313,7 +313,7 @@ export const Header: React.FC<HeaderProps> = ({
                             className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors text-left"
                           >
                             <i className="fas fa-sign-out-alt w-5 text-center"></i>
-                            <span>Sair</span>
+                            <span>{t('signOut')}</span>
                           </button>
                         </div>
                       </div>
@@ -347,7 +347,7 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onOpenRightPanel}
               className={`p-2 rounded-lg transition-all ${isRightPanelOpen ? 'bg-bible-accent text-white shadow-md' : 'text-bible-text hover:bg-bible-hover'}`}
-              title="Ferramentas"
+              title={t('tools')}
             >
               <i className="fas fa-tools text-sm"></i>
             </button>
@@ -519,7 +519,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-bible-text hover:bg-bible-hover rounded-lg transition-colors text-left"
                   >
                     <i className="fas fa-cog w-5 text-bible-text-light opacity-60 text-center"></i>
-                    <span>Configurações</span>
+                    <span>{t('settings')}</span>
                   </button>
                   <div className="h-px bg-bible-border my-1 mx-2"></div>
                   <button
@@ -527,7 +527,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 rounded-lg transition-colors text-left"
                   >
                     <i className="fas fa-sign-out-alt w-5 text-center"></i>
-                    <span>Sair</span>
+                    <span>{t('signOut')}</span>
                   </button>
                 </div>
               </>

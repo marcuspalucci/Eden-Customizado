@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useEffect, useCallback } from 'react';
 import { useBible } from './BibleContext';
-import { useAuth } from './AuthContext';
+import { useLanguage } from './LanguageContext';
 import { getBibleContent, translateForAudio } from '../services/geminiService';
 import { Language } from '../types';
 import { AVAILABLE_TRANSLATIONS } from '../utils/constants';
@@ -99,8 +99,8 @@ const parseVerses = (text: string): ParsedVerse[] => {
 
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { bibleRef } = useBible();
-  const { user } = useAuth();
-  const currentLang = user?.language || 'pt';
+  // Usa LanguageContext como fonte única de idioma
+  const { currentLang } = useLanguage();
 
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [playingSource, setPlayingSource] = useState<string | null>(null);

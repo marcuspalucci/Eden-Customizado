@@ -80,7 +80,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
     setProfileMessage(null);
     const newAge = parseInt(profileForm.age);
     if (isNaN(newAge)) {
-      setProfileMessage({ type: 'error', text: 'Idade inválida.' });
+      setProfileMessage({ type: 'error', text: t('errorInvalidAge') });
       return;
     }
     const fullPhone = profileForm.phone ? `${profileForm.countryCode}${profileForm.phone}` : '';
@@ -98,7 +98,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       setUser(updatedUser);
       setLanguage(profileForm.language);
       applyAgePersonalization(newAge, profileForm.language);
-      setProfileMessage({ type: 'success', text: 'Perfil de visitante atualizado!' });
+      setProfileMessage({ type: 'success', text: t('guestProfileUpdated') });
       return;
     }
     try {
@@ -120,27 +120,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
       setUser(updatedUser);
       setLanguage(profileForm.language);
       applyAgePersonalization(newAge, profileForm.language);
-      setProfileMessage({ type: 'success', text: 'Perfil atualizado!' });
+      setProfileMessage({ type: 'success', text: t('profileUpdated') });
     } catch (err) {
       logger.error(err);
-      setProfileMessage({ type: 'error', text: 'Erro ao atualizar.' });
+      setProfileMessage({ type: 'error', text: t('errorUpdate') });
     }
   };
 
   const handleChangePassword = async () => {
     if (!profileForm.newPassword) return;
     if (profileForm.newPassword !== profileForm.confirmPassword) {
-      setProfileMessage({ type: 'error', text: 'As senhas não coincidem.' });
+      setProfileMessage({ type: 'error', text: t('errorPasswordMismatch') });
       return;
     }
     if (auth.currentUser) {
       try {
         await auth.currentUser.updatePassword(profileForm.newPassword);
-        setProfileMessage({ type: 'success', text: 'Senha alterada!' });
+        setProfileMessage({ type: 'success', text: t('passwordChanged') });
         setProfileForm((prev) => ({ ...prev, newPassword: '', confirmPassword: '' }));
       } catch (err) {
         const error = err as { message: string };
-        setProfileMessage({ type: 'error', text: 'Erro ao mudar senha: ' + error.message });
+        setProfileMessage({ type: 'error', text: t('errorChangePassword') + error.message });
       }
     }
   };
@@ -248,7 +248,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
           </div>
           <div>
             <label className="block text-xs font-bold text-bible-text-light uppercase tracking-wide mb-1">
-              Idioma
+              {t('language')}
             </label>
             <select
               className="w-full bg-bible-card border border-bible-border rounded-lg px-4 py-2 outline-none focus:border-bible-accent transition-colors"
@@ -272,19 +272,19 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
         {user?.email !== 'guest@dev.local' && (
           <div className="border-t border-bible-border my-6 pt-6">
             <h4 className="font-bold text-sm text-bible-text mb-4 flex items-center">
-              <i className="fas fa-lock text-bible-accent mr-2"></i> Alterar Senha
+              <i className="fas fa-lock text-bible-accent mr-2"></i> {t('changePassword')}
             </h4>
             <div className="space-y-3">
               <input
                 type="password"
-                placeholder="Nova Senha"
+                placeholder={t('newPassword')}
                 className="w-full bg-bible-card border border-bible-border rounded-lg px-4 py-2 outline-none focus:border-bible-accent transition-colors text-sm"
                 value={profileForm.newPassword}
                 onChange={(e) => setProfileForm({ ...profileForm, newPassword: e.target.value })}
               />
               <input
                 type="password"
-                placeholder="Confirmar Senha"
+                placeholder={t('confirmPassword')}
                 className="w-full bg-bible-card border border-bible-border rounded-lg px-4 py-2 outline-none focus:border-bible-accent transition-colors text-sm"
                 value={profileForm.confirmPassword}
                 onChange={(e) =>
@@ -295,7 +295,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ isOpen, onClose }) =
                 onClick={handleChangePassword}
                 className="w-full py-2 bg-bible-secondary text-bible-text font-bold rounded-lg hover:bg-bible-hover border border-bible-border transition-all text-sm"
               >
-                Atualizar Senha
+                {t('updatePassword')}
               </button>
             </div>
           </div>

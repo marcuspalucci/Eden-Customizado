@@ -12,15 +12,28 @@ interface LanguageContextData {
 
 const LanguageContext = createContext<LanguageContextData>({} as LanguageContextData);
 
-export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentLang, setCurrentLang] = useState<Language>('pt');
+const LANG_MAP: Record<Language, string> = {
+  pt: 'pt-BR',
+  en: 'en-US',
+  es: 'es-ES'
+};
 
-  useEffect(() => {
-    const saved = localStorage.getItem('eden_language');
-    if (saved && (saved === 'pt' || saved === 'en' || saved === 'es')) {
-      setCurrentLang(saved as Language);
+export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Inicializa direto do localStorage para evitar flash de idioma errado
+  const [currentLang, setCurrentLang] = useState<Language>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('eden_language');
+      if (saved && (saved === 'pt' || saved === 'en' || saved === 'es')) {
+        return saved as Language;
+      }
     }
-  }, []);
+    return 'pt';
+  });
+
+  // Atualiza o atributo lang do HTML para acessibilidade e SEO
+  useEffect(() => {
+    document.documentElement.lang = LANG_MAP[currentLang] || 'pt-BR';
+  }, [currentLang]);
 
   const setLanguage = (lang: Language) => {
     setCurrentLang(lang);

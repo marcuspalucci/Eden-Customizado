@@ -2,12 +2,12 @@ import { useState, useCallback, useEffect } from 'react';
 import { getBibleContent } from '../services/geminiService';
 import { logger } from '../utils/logger';
 import { useBible } from '../contexts/BibleContext';
-import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export const useBibleReader = () => {
   const { bibleRef, compareMode, secondaryBibleRef } = useBible();
-  const { user } = useAuth();
-  const currentLang = user?.language || 'pt';
+  // Usa LanguageContext como fonte única de idioma
+  const { currentLang } = useLanguage();
 
   const [bibleText, setBibleText] = useState<string>('');
   const [secondaryBibleText, setSecondaryBibleText] = useState('');

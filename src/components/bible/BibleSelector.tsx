@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BIBLE_BOOKS, UI_TRANSLATIONS } from '../../utils/constants';
-import { useAuth } from '../../contexts/AuthContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface BibleSelectorProps {
   isOpen: boolean;
@@ -17,8 +17,8 @@ export const BibleSelector: React.FC<BibleSelectorProps> = ({
   currentChapter,
   onSelect
 }) => {
-  const { user } = useAuth();
-  const currentLang = user?.language || 'pt';
+  // Usa LanguageContext como fonte única de idioma
+  const { currentLang } = useLanguage();
   const t = UI_TRANSLATIONS[currentLang];
 
   const [step, setStep] = useState<'BOOK' | 'CHAPTER'>('BOOK');

@@ -484,7 +484,10 @@ export const App: React.FC = () => {
   // 3. Sincronizar estado local quando usuário muda (Contexto -> App State)
   useEffect(() => {
     if (user && user.email !== 'guest@dev.local') {
-      if (user.language) setLanguage(user.language);
+      // Sync idioma do perfil para LanguageContext (evita re-render se já é igual)
+      if (user.language && user.language !== currentLang) {
+        setLanguage(user.language);
+      }
 
       // Chamada segura para função definida no escopo (hoisting funciona para function declaration, mas para const func não.
       // Se applyAgePersonalization é const, esperamos que esteja definida antes ou o useEffect roda depois)

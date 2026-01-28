@@ -76,7 +76,31 @@ export const UI_TRANSLATIONS = {
     noRestore: 'Nenhum ponto salvo.',
     dailyDevotional: 'Devocional Diário',
     devotionalTopic: 'Tópico do Devocional',
-    devotionalPlaceholder: 'Ex: Fé, Amor, Sabedoria...'
+    devotionalPlaceholder: 'Ex: Fé, Amor, Sabedoria...',
+    // Auth errors
+    errorFillAllFields: 'Preencha todos os campos.',
+    errorPasswordMismatch: 'Senhas não coincidem.',
+    errorInvalidAge: 'Idade inválida.',
+    errorEnterEmail: 'Digite seu email.',
+    emailSent: 'Email enviado!',
+    errorSendEmail: 'Erro ao enviar email.',
+    recover: 'Recuperar',
+    send: 'Enviar',
+    or: 'OU',
+    // Profile
+    guestProfileUpdated: 'Perfil de visitante atualizado!',
+    profileUpdated: 'Perfil atualizado!',
+    errorUpdate: 'Erro ao atualizar.',
+    passwordChanged: 'Senha alterada!',
+    errorChangePassword: 'Erro ao mudar senha: ',
+    language: 'Idioma',
+    changePassword: 'Alterar Senha',
+    newPassword: 'Nova Senha',
+    updatePassword: 'Atualizar Senha',
+    // Header
+    tools: 'Ferramentas',
+    settings: 'Configurações',
+    signOut: 'Sair'
   },
   en: {
     loginTitle: 'Back to the beginning',
@@ -132,7 +156,31 @@ export const UI_TRANSLATIONS = {
     noRestore: 'No points saved.',
     dailyDevotional: 'Daily Devotional',
     devotionalTopic: 'Devotional Topic',
-    devotionalPlaceholder: 'E.g.: Faith, Love, Wisdom...'
+    devotionalPlaceholder: 'E.g.: Faith, Love, Wisdom...',
+    // Auth errors
+    errorFillAllFields: 'Please fill in all fields.',
+    errorPasswordMismatch: 'Passwords do not match.',
+    errorInvalidAge: 'Invalid age.',
+    errorEnterEmail: 'Enter your email.',
+    emailSent: 'Email sent!',
+    errorSendEmail: 'Error sending email.',
+    recover: 'Recover',
+    send: 'Send',
+    or: 'OR',
+    // Profile
+    guestProfileUpdated: 'Guest profile updated!',
+    profileUpdated: 'Profile updated!',
+    errorUpdate: 'Error updating.',
+    passwordChanged: 'Password changed!',
+    errorChangePassword: 'Error changing password: ',
+    language: 'Language',
+    changePassword: 'Change Password',
+    newPassword: 'New Password',
+    updatePassword: 'Update Password',
+    // Header
+    tools: 'Tools',
+    settings: 'Settings',
+    signOut: 'Sign Out'
   },
   es: {
     loginTitle: 'De vuelta al principio',
@@ -188,7 +236,31 @@ export const UI_TRANSLATIONS = {
     noRestore: 'No hay puntos guardados.',
     dailyDevotional: 'Devocional Diario',
     devotionalTopic: 'Tema del Devocional',
-    devotionalPlaceholder: 'Ej: Fe, Amor, Sabiduría...'
+    devotionalPlaceholder: 'Ej: Fe, Amor, Sabiduría...',
+    // Auth errors
+    errorFillAllFields: 'Por favor, complete todos los campos.',
+    errorPasswordMismatch: 'Las contraseñas no coinciden.',
+    errorInvalidAge: 'Edad inválida.',
+    errorEnterEmail: 'Ingrese su correo.',
+    emailSent: '¡Correo enviado!',
+    errorSendEmail: 'Error al enviar correo.',
+    recover: 'Recuperar',
+    send: 'Enviar',
+    or: 'O',
+    // Profile
+    guestProfileUpdated: '¡Perfil de visitante actualizado!',
+    profileUpdated: '¡Perfil actualizado!',
+    errorUpdate: 'Error al actualizar.',
+    passwordChanged: '¡Contraseña cambiada!',
+    errorChangePassword: 'Error al cambiar contraseña: ',
+    language: 'Idioma',
+    changePassword: 'Cambiar Contraseña',
+    newPassword: 'Nueva Contraseña',
+    updatePassword: 'Actualizar Contraseña',
+    // Header
+    tools: 'Herramientas',
+    settings: 'Configuración',
+    signOut: 'Salir'
   }
 };
 

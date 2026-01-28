@@ -34,22 +34,22 @@ export const AuthScreen: React.FC = () => {
     try {
       if (authView === 'login') {
         if (!authForm.email || !authForm.password) {
-          setAuthError('Preencha todos os campos.');
+          setAuthError(t('errorFillAllFields'));
           return;
         }
         await auth.signInWithEmailAndPassword(authForm.email, authForm.password);
       } else {
         if (!authForm.name || !authForm.age || !authForm.email || !authForm.password) {
-          setAuthError('Preencha todos os campos.');
+          setAuthError(t('errorFillAllFields'));
           return;
         }
         if (authForm.password !== authForm.confirmPassword) {
-          setAuthError('Senhas não coincidem.');
+          setAuthError(t('errorPasswordMismatch'));
           return;
         }
         const age = parseInt(authForm.age);
         if (isNaN(age)) {
-          setAuthError('Idade inválida.');
+          setAuthError(t('errorInvalidAge'));
           return;
         }
         const fullPhone = authForm.phone ? `${authForm.countryCode}${authForm.phone}` : '';
@@ -110,19 +110,19 @@ export const AuthScreen: React.FC = () => {
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetEmail) {
-      setResetMessage('Digite seu email.');
+      setResetMessage(t('errorEnterEmail'));
       return;
     }
     try {
       await auth.sendPasswordResetEmail(resetEmail);
-      setResetMessage('Email enviado!');
+      setResetMessage(t('emailSent'));
       setTimeout(() => {
         setShowForgotPassword(false);
         setResetMessage('');
       }, 3000);
     } catch (err) {
       logger.error(err);
-      setResetMessage('Erro ao enviar email.');
+      setResetMessage(t('errorSendEmail'));
     }
   };
 
@@ -182,7 +182,7 @@ export const AuthScreen: React.FC = () => {
               <button onClick={() => setShowForgotPassword(false)}>
                 <i className="fas fa-arrow-left"></i>
               </button>
-              <h3 className="ml-3 font-bold">Recuperar</h3>
+              <h3 className="ml-3 font-bold">{t('recover')}</h3>
             </div>
             <form onSubmit={handleForgotPassword} className="space-y-4">
               <div>
@@ -203,7 +203,7 @@ export const AuthScreen: React.FC = () => {
                 type="submit"
                 className="w-full py-3 bg-bible-accent text-white rounded-lg font-bold"
               >
-                Enviar
+                {t('send')}
               </button>
             </form>
           </div>
@@ -329,7 +329,7 @@ export const AuthScreen: React.FC = () => {
             </form>
             <div className="my-4 flex items-center">
               <div className="flex-1 border-t border-bible-border"></div>
-              <span className="px-3 text-bible-text-light text-xs uppercase font-bold">OU</span>
+              <span className="px-3 text-bible-text-light text-xs uppercase font-bold">{t('or')}</span>
               <div className="flex-1 border-t border-bible-border"></div>
             </div>
             <button
