@@ -315,6 +315,19 @@ export const AuthScreen: React.FC = () => {
                   </div>
                 )}
               </div>
+              {authView === 'register' && (
+                <div>
+                  <label className="block text-xs font-bold text-bible-text-light uppercase tracking-wide mb-1">
+                    {t('confirmPassword')}
+                  </label>
+                  <input
+                    type="password"
+                    value={authForm.confirmPassword}
+                    onChange={(e) => setAuthForm({ ...authForm, confirmPassword: e.target.value })}
+                    className="w-full bg-bible-card border border-bible-border rounded-lg px-4 py-2 text-bible-text outline-none focus:border-bible-accent"
+                  />
+                </div>
+              )}
               {authError && (
                 <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-200 mb-4">
                   <i className="fas fa-exclamation-circle mr-2"></i> {authError}
