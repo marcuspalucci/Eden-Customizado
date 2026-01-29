@@ -114,7 +114,8 @@ export const App: React.FC = () => {
     setCompareMode,
     secondaryBibleRef,
     setSecondaryBibleRef,
-    secondaryTranslation
+    secondaryTranslation,
+    setIsCrossReference
   } = useBible();
 
   // Alias para manter compatibilidade com código antigo se necessário, ou refatorar usos de 'translationInput'
@@ -429,6 +430,8 @@ export const App: React.FC = () => {
       });
 
       if (bookObj) {
+        // Marca como referência cruzada para não sincronizar com bibleRef
+        setIsCrossReference(true);
         setSecondaryBibleRef({
           book: bookObj.name,
           chapter: parseInt(chapter),
@@ -439,7 +442,7 @@ export const App: React.FC = () => {
         console.warn(`Parallel reference book not found: ${bookRaw}`);
       }
     }
-  }, [secondaryTranslation, setSecondaryBibleRef, setCompareMode]);
+  }, [secondaryTranslation, setSecondaryBibleRef, setCompareMode, setIsCrossReference]);
 
   const handleStrongClick = useCallback(async (word: string, code: string) => {
     setIsRightPanelOpen(true);
@@ -818,7 +821,11 @@ export const App: React.FC = () => {
           onOpenRightPanel={() => setIsRightPanelOpen(!isRightPanelOpen)}
           isRightPanelOpen={isRightPanelOpen}
           compareMode={compareMode}
-          onToggleCompare={() => setCompareMode(!compareMode)}
+          onToggleCompare={() => {
+            // Ao ativar/desativar pelo botão, reseta o modo referência cruzada
+            setIsCrossReference(false);
+            setCompareMode(!compareMode);
+          }}
         >
           <div className="flex-1 flex flex-col h-full overflow-hidden relative">
             <div className="flex-1 flex overflow-hidden relative">

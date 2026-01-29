@@ -15,6 +15,9 @@ interface BibleContextData {
   setSecondaryBibleRef: React.Dispatch<React.SetStateAction<BibleReference | null>>;
   secondaryTranslation: string;
   setSecondaryTranslation: (trans: string) => void;
+  // Cross Reference Mode (livro/capítulo diferente - não sincroniza)
+  isCrossReference: boolean;
+  setIsCrossReference: (value: boolean) => void;
 
   // Navigation Helper Actions
   goToNextChapter: () => void;
@@ -89,6 +92,9 @@ export const BibleProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const [compareMode, setCompareMode] = useState(false);
   const [secondaryTranslation, setSecondaryTranslationState] = useState('KJV');
   const [secondaryBibleRef, setSecondaryBibleRef] = useState<BibleReference | null>(null);
+  // Flag para indicar se estamos em modo de referência cruzada (livro/capítulo diferente)
+  // Quando true, NÃO sincroniza o secondaryBibleRef com o bibleRef
+  const [isCrossReference, setIsCrossReference] = useState(false);
 
   // Sincronizar secondaryTranslation com secondaryBibleRef
   const setSecondaryTranslation = (trans: string) => {
@@ -109,15 +115,16 @@ export const BibleProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [compareMode, bibleRef, secondaryTranslation]);
 
   // Sincronizar livro e capítulo quando bibleRef muda (no modo comparação)
+  // MAS apenas se não for referência cruzada (onde queremos manter livro/capítulo diferente)
   useEffect(() => {
-    if (compareMode && secondaryBibleRef) {
+    if (compareMode && secondaryBibleRef && !isCrossReference) {
       setSecondaryBibleRef((prev) => prev ? {
         ...prev,
         book: bibleRef.book,
         chapter: bibleRef.chapter
       } : null);
     }
-  }, [bibleRef.book, bibleRef.chapter, compareMode]);
+  }, [bibleRef.book, bibleRef.chapter, compareMode, isCrossReference]);
 
   const goToNextChapter = () => {
     setBibleRefState((prev) => {
@@ -178,6 +185,8 @@ export const BibleProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setSecondaryBibleRef,
         secondaryTranslation,
         setSecondaryTranslation,
+        isCrossReference,
+        setIsCrossReference,
         goToNextChapter,
         goToPreviousChapter,
         goToBook,
