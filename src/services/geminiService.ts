@@ -148,7 +148,22 @@ export const findBiblicalLocations = async (
     const regionDescription = locations.map((l: any) => l.name).join(', ');
 
     const langName = lang === 'en' ? 'ENGLISH' : lang === 'es' ? 'SPANISH' : 'PORTUGUESE';
-    const mapPrompt = `Create a map showing these biblical locations: ${regionDescription}. Style: Ancient parchment. Labels in ${langName}.`;
+    const mapPrompt = `Create an EDUCATIONAL biblical map showing: ${regionDescription}.
+
+REQUIREMENTS:
+- Clear labels in ${langName} for all locations
+- Distance scale indicator (e.g., 0-50-100 km)
+- Compass rose showing cardinal directions (N/S/E/W)
+- Legend box explaining location markers
+- Historical period context notes
+- Modern country borders in light gray for reference
+- Topographical features (mountains, rivers, seas) clearly labeled
+- Ancient trade routes if relevant to the locations
+
+STYLE: Ancient parchment with aged texture and educational clarity
+FORMAT: High-quality educational poster suitable for Bible study
+
+Focus on making this useful for teaching and learning about biblical geography.`;
     const mapUrl = await generateImageBackend(mapPrompt, '4:3');
 
     const adaptedLocations = locations.map((l: any) => ({
@@ -174,7 +189,22 @@ export const generateCustomMap = async (
     let mapUrl = null;
     if (extractedData.regionDescription) {
       const langName = lang === 'en' ? 'ENGLISH' : lang === 'es' ? 'SPANISH' : 'PORTUGUESE';
-      const mapPrompt = `Create a biblical map: ${topic}. ${extractedData.regionDescription}. Labels in ${langName}. Style: Ancient Map.`;
+      const mapPrompt = `Create an EDUCATIONAL biblical map about: ${topic}. ${extractedData.regionDescription}.
+
+REQUIREMENTS:
+- Clear labels in ${langName} for all locations
+- Distance scale indicator (e.g., 0-50-100 km)
+- Compass rose showing cardinal directions (N/S/E/W)
+- Legend box explaining location markers
+- Historical context and period notes
+- Modern country borders in light gray for reference
+- Topographical features (mountains, rivers, seas) clearly labeled
+- Ancient trade routes if relevant
+
+STYLE: Ancient parchment with aged texture and educational clarity
+FORMAT: High-quality educational poster suitable for Bible study
+
+Focus on making this useful for teaching and learning about biblical geography.`;
       mapUrl = await generateImageBackend(mapPrompt, '4:3');
     }
 
@@ -278,6 +308,27 @@ export const generateDailyDevotional = async (topic: string, age?: number, lang:
     const data = result.data as { success: boolean } & DevotionalContent;
     return data;
   } catch (err) { throw handleApiError(err, 'generateDailyDevotional'); }
+};
+
+export const getDailyDevotional = async (lang: Language = 'pt'): Promise<DevotionalContent | null> => {
+  try {
+    const dailyDevotionalFn = functions.httpsCallable('getDailyDevotional');
+    const result = await dailyDevotionalFn({ lang });
+    const data = result.data as { success: boolean } & DevotionalContent;
+
+    if (!data.success) {
+      throw new Error('Falha ao obter devocional do dia');
+    }
+
+    return {
+      title: data.title,
+      scriptureReference: data.scriptureReference,
+      scriptureText: data.scriptureText,
+      reflection: data.reflection,
+      prayer: data.prayer,
+      finalQuote: data.finalQuote
+    };
+  } catch (err) { throw handleApiError(err, 'getDailyDevotional'); }
 };
 
 export const askLibraryAgent = async (query: string, resources: LibraryResource[], lang: Language = 'pt'): Promise<string> => {

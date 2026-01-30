@@ -9,6 +9,7 @@ interface DevotionalViewProps {
   topic: string;
   onTopicChange: (topic: string) => void;
   onGenerate: () => void;
+  onGetDaily: () => void;
   isGuest: boolean;
   error?: string | null;
 }
@@ -19,6 +20,7 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
   topic,
   onTopicChange,
   onGenerate,
+  onGetDaily,
   isGuest,
   error
 }) => {
@@ -27,7 +29,7 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
   const formatShareText = () => {
     if (!content) return '';
     const appUrl = window.location.origin;
-    return `*${content.title}*\n\n"${content.scriptureText}"\n(${content.scriptureReference})\n\n${content.reflection}\n\n_${content.finalQuote}_\n\nVia App ÉDEN: ${appUrl}`;
+    return `*${content.title}*\n\n"${content.scriptureText}"\n(${content.scriptureReference})\n\n${content.reflection}\n\n*Oração:*\n"${content.prayer}"\n\n_${content.finalQuote}_\n\nVia App ÉDEN: ${appUrl}`;
   };
 
   const shareToSocial = (platform: 'whatsapp' | 'twitter' | 'copy') => {
@@ -56,14 +58,35 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
             placeholder={t('devotionalPlaceholder')}
             value={topic}
             onChange={(e) => onTopicChange(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && onGenerate()}
+            onKeyDown={(e) => e.key === 'Enter' && topic && onGenerate()}
           />
-          <button
-            onClick={onGenerate}
-            className="px-4 sm:px-6 py-2 bg-bible-accent text-white text-sm sm:text-base font-bold rounded-lg hover:bg-bible-accent-hover transition-all shadow-md active:transform active:scale-95 w-full sm:w-auto"
-          >
-            {loading ? <i className="fas fa-spinner fa-spin"></i> : t('dailyDevotional')}
-          </button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              onClick={onGetDaily}
+              disabled={loading}
+              className="flex-1 sm:flex-initial px-4 py-2 bg-bible-secondary text-bible-text text-sm sm:text-base font-bold rounded-lg hover:bg-bible-secondary/80 transition-all shadow-md active:transform active:scale-95 disabled:opacity-50"
+              title="Devocional do Dia"
+            >
+              {loading ? <i className="fas fa-spinner fa-spin"></i> : (
+                <>
+                  <i className="fas fa-calendar-day mr-2"></i>
+                  <span className="hidden sm:inline">Do Dia</span>
+                </>
+              )}
+            </button>
+            <button
+              onClick={onGenerate}
+              disabled={!topic || loading}
+              className="flex-1 sm:flex-initial px-4 sm:px-6 py-2 bg-bible-accent text-white text-sm sm:text-base font-bold rounded-lg hover:bg-bible-accent-hover transition-all shadow-md active:transform active:scale-95 disabled:opacity-50"
+            >
+              {loading ? <i className="fas fa-spinner fa-spin"></i> : (
+                <>
+                  <i className="fas fa-edit mr-2"></i>
+                  <span className="hidden sm:inline">Gerar</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
         {error && <p className="text-red-500 text-xs mt-2">{error}</p>}
         {isGuest && (

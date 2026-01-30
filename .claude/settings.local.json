@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx github:SynkraAI/aios-core:*)",
+      "Bash(timeout:*)",
+      "Bash(npm run build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npx firebase deploy:*)",
+      "Bash(npx vercel:*)",
+      "Bash(npx firebase firestore:delete:*)",
+      "Bash(npx railway status:*)",
+      "Bash(npx railway whoami)",
+      "Bash(npx railway:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(wmic process where processid=19468 delete)",
+      "Bash(git log:*)"
+    ]
+  }
+}

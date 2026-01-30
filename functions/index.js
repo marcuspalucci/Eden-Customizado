@@ -75,6 +75,10 @@ const devotionalSchema = z.object({
   lang: z.enum(["pt", "en", "es"]).default("pt")
 });
 
+const dailyDevotionalSchema = z.object({
+  lang: z.enum(["pt", "en", "es"]).default("pt")
+});
+
 const studyGuideSchema = z.object({
   theme: z.string().min(1),
   context: z.string().min(10),
@@ -402,7 +406,69 @@ exports.generateDailyDevotional = onCall(defaultFunctionOptions, async (request)
   }
 });
 
-// 8. generateStudyGuide
+// 8. getDailyDevotional - Devocional do dia com cache
+exports.getDailyDevotional = onCall(defaultFunctionOptions, async (request) => {
+  console.log("📥 Chamada getDailyDevotional recebida:", JSON.stringify(request.data));
+  const { lang } = validateSchema(dailyDevotionalSchema, request.data);
+
+  try {
+    // 1. Verificar cache
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const cacheId = `${today}_${lang}`;
+    const cacheRef = admin.firestore().collection('daily_devotionals').doc(cacheId);
+
+    const cached = await cacheRef.get();
+    if (cached.exists) {
+      const data = cached.data();
+      if (data.expiresAt.toDate() > new Date()) {
+        console.log("✅ Cache hit para devocional do dia:", cacheId);
+        return { success: true, ...data.content };
+      }
+    }
+
+    // 2. Gerar novo devocional
+    const topics = {
+      pt: ["Esperança em tempos difíceis", "Gratidão nas pequenas coisas", "Fé e perseverança", "Amor ao próximo", "Sabedoria divina", "Paz interior", "Propósito de vida"],
+      en: ["Hope in difficult times", "Gratitude in small things", "Faith and perseverance", "Love for neighbor", "Divine wisdom", "Inner peace", "Life purpose"],
+      es: ["Esperanza en tiempos difíciles", "Gratitud en las pequeñas cosas", "Fe y perseverancia", "Amor al prójimo", "Sabiduría divina", "Paz interior", "Propósito de vida"]
+    };
+
+    // Escolher tópico baseado no dia do ano (determinístico)
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
+    const topicList = topics[lang] || topics.pt;
+    const selectedTopic = topicList[dayOfYear % topicList.length];
+
+    return await retryWrapper(async () => {
+      const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
+      const prompt = `Crie um devocional diário inspirador sobre "${selectedTopic}" em ${getLangName(lang)}. Retorne JSON { "title": "...", "scriptureReference": "...", "scriptureText": "...", "reflection": "...", "prayer": "...", "finalQuote": "..." }.`;
+      const result = await model.generateContent(prompt);
+      logTokenUsage('getDailyDevotional', result);
+      const jsonData = extractJson(result.response.text());
+
+      if (!jsonData) throw new Error("Falha ao gerar formato JSON válido para Devocional do Dia");
+
+      // 3. Salvar cache
+      const midnight = new Date();
+      midnight.setHours(24, 0, 0, 0); // Próxima meia-noite
+
+      await cacheRef.set({
+        content: jsonData,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromDate(midnight),
+        lang,
+        topic: selectedTopic
+      });
+
+      console.log("✅ Devocional do dia gerado e cacheado:", cacheId);
+      return { success: true, ...jsonData };
+    });
+  } catch (e) {
+    console.error("Error in getDailyDevotional:", e);
+    throw new HttpsError("internal", e.message);
+  }
+});
+
+// 9. generateStudyGuide
 exports.generateStudyGuide = onCall(defaultFunctionOptions, async (request) => {
   const { theme, context, lang } = validateSchema(studyGuideSchema, request.data);
   try {

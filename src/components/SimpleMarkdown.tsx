@@ -5,6 +5,7 @@ interface SimpleMarkdownProps {
   text: string;
   onParallelClick?: (ref: string) => void;
   onStrongClick?: (word: string, code: string) => void;
+  enableParagraphTracking?: boolean;
 }
 
 const ParallelList = ({ refs, onParallelClick }: { refs: string[], onParallelClick: (ref: string) => void }) => {
@@ -41,7 +42,7 @@ const ParallelList = ({ refs, onParallelClick }: { refs: string[], onParallelCli
   );
 };
 
-const SimpleMarkdown = memo(({ text, onParallelClick, onStrongClick }: SimpleMarkdownProps) => {
+const SimpleMarkdown = memo(({ text, onParallelClick, onStrongClick, enableParagraphTracking }: SimpleMarkdownProps) => {
   if (!text) return null;
 
   if (text.startsWith('⚠️')) {
@@ -90,7 +91,11 @@ const SimpleMarkdown = memo(({ text, onParallelClick, onStrongClick }: SimpleMar
 
     const parts = line.split(/(\*\*.*?\*\*)/g);
     return (
-      <div key={i} className="mb-2 min-h-[1em] transition-all duration-300">
+      <div
+        key={i}
+        className="mb-2 min-h-[1em] transition-all duration-300"
+        data-paragraph-index={enableParagraphTracking ? i : undefined}
+      >
         {parts.map((part, j) => {
           if (part.startsWith('**') && part.endsWith('**')) {
             // Verse numbers - extract number for data-verse

@@ -11,7 +11,8 @@ import {
   generateCustomMap,
   askLibraryAgent,
   generateThematicStudy,
-  generateDailyDevotional
+  generateDailyDevotional,
+  getDailyDevotional
 } from './services/geminiService';
 import {
   BibleReference,
@@ -745,6 +746,31 @@ export const App: React.FC = () => {
     }
   }, [devotionalTopic, currentLang, handleError]);
 
+  const handleGetDailyDevotional = useCallback(async () => {
+    setLoading((prev) => ({ ...prev, devotional: true }));
+    setFeatureError((prev) => ({ ...prev, devotional: undefined }));
+    try {
+      const result = await getDailyDevotional(currentLang);
+      if (result) {
+        setDevotionalContent(result);
+        setDevotionalTopic('[Devocional do Dia]');
+
+        // Salvar no histórico se autenticado
+        if (auth.currentUser) {
+          saveHistory('daily_devotional', 'Devocional do Dia');
+        }
+      }
+    } catch (err) {
+      console.error('Erro ao obter devocional do dia:', err);
+      setFeatureError((prev) => ({
+        ...prev,
+        devotional: 'Erro ao carregar devocional do dia. Tente novamente.'
+      }));
+    } finally {
+      setLoading((prev) => ({ ...prev, devotional: false }));
+    }
+  }, [currentLang, handleError, auth.currentUser]);
+
   const handleCustomExegesis = useCallback(async () => {
     if (!exegesisInput.trim()) return;
     setLoading((prev) => ({ ...prev, exegesis: true }));
@@ -875,6 +901,7 @@ export const App: React.FC = () => {
                         topic={devotionalTopic}
                         onTopicChange={setDevotionalTopic}
                         onGenerate={handleGenerateDevotional}
+                        onGetDaily={handleGetDailyDevotional}
                         isGuest={user?.email === 'guest@dev.local'}
                         error={featureError.devotional}
                       />

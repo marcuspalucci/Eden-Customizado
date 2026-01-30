@@ -11,6 +11,12 @@ interface ParsedVerse {
   text: string;
 }
 
+interface ParsedParagraph {
+  index: number;
+  text: string;
+  estimatedDuration: number; // em ms
+}
+
 interface AudioContextType {
   isSpeaking: boolean;
   playingSource: string | null;
@@ -97,6 +103,42 @@ const parseVerses = (text: string): ParsedVerse[] => {
   return verses;
 };
 
+// Parse paragraphs from generated content text
+const parseParagraphs = (text: string, speechRate: number): ParsedParagraph[] => {
+  if (!text) return [];
+  const paragraphs: ParsedParagraph[] = [];
+
+  // Split by double line breaks
+  const rawParagraphs = text.split(/\n\n+/);
+
+  rawParagraphs.forEach((para, index) => {
+    const cleaned = para
+      .replace(/<[HG]\d+>/g, '')
+      .replace(/\*\*\d+\.?\*\*/g, '')
+      .replace(/^\d+\s+/gm, '')
+      .replace(/\b\d+:\d+\b/g, '')
+      .replace(/[*#]/g, '')
+      .replace(/\(.*?\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (cleaned) {
+      // Calculate estimated duration: wordCount / (150 * speechRate / 60) * 1000
+      const wordCount = cleaned.split(/\s+/).length;
+      const estimatedDuration = (wordCount / (150 * (speechRate / 60))) * 1000;
+
+      paragraphs.push({
+        index,
+        text: cleaned,
+        estimatedDuration
+      });
+    }
+  });
+
+  logger.log(`Parsed ${paragraphs.length} paragraphs`);
+  return paragraphs;
+};
+
 export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { bibleRef } = useBible();
   // Usa LanguageContext como fonte única de idioma
@@ -116,6 +158,10 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const versesRef = useRef<ParsedVerse[]>([]);
   const verseIndexRef = useRef(0);
   const speechRateRef = useRef(1.0);
+
+  // Paragraph reading state
+  const paragraphsRef = useRef<ParsedParagraph[]>([]);
+  const paragraphIndexRef = useRef(0);
 
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
@@ -199,6 +245,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setIsVerseMode(false);
     versesRef.current = [];
     verseIndexRef.current = 0;
+    paragraphsRef.current = [];
+    paragraphIndexRef.current = 0;
     releaseWakeLock();
 
     // Clear all highlights from DOM
@@ -287,6 +335,76 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     window.speechSynthesis.speak(utterance);
   }, [cleanTextForSpeech, selectBestVoice, audioTargetLang, voices]);
 
+  // Speak a single paragraph and call callback when done
+  const speakParagraphWithHighlight = useCallback((paragraph: ParsedParagraph, onEnd: () => void) => {
+    const cleanedText = cleanTextForSpeech(paragraph.text);
+    if (!cleanedText) {
+      onEnd();
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(cleanedText);
+    const bestVoice = selectBestVoice(audioTargetLang, voices);
+
+    if (bestVoice) {
+      utterance.voice = bestVoice;
+      utterance.lang = bestVoice.lang;
+    } else {
+      utterance.lang = audioTargetLang === 'pt' ? 'pt-BR' : audioTargetLang === 'en' ? 'en-US' : 'es-ES';
+    }
+
+    utterance.rate = speechRateRef.current;
+
+    utterance.onstart = () => {
+      // Remove highlight from previous paragraph
+      document.querySelectorAll('.reading-highlight').forEach(el => {
+        el.classList.remove('reading-highlight', 'animate-pulse-subtle');
+      });
+
+      // Find paragraph element by data-paragraph-index attribute
+      const paragraphEl = document.querySelector(`[data-paragraph-index="${paragraph.index}"]`);
+
+      if (paragraphEl) {
+        paragraphEl.classList.add('reading-highlight', 'animate-pulse-subtle');
+        paragraphEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        logger.warn(`Could not find paragraph ${paragraph.index} in DOM`);
+      }
+    };
+
+    utterance.onend = onEnd;
+    utterance.onerror = (e) => {
+      if (e.error !== 'interrupted' && e.error !== 'canceled') {
+        logger.error('Speech error:', e.error);
+      }
+      onEnd();
+    };
+
+    speechRef.current = utterance;
+    window.speechSynthesis.speak(utterance);
+  }, [cleanTextForSpeech, selectBestVoice, audioTargetLang, voices]);
+
+  // Read next paragraph in sequence
+  const readNextParagraph = useCallback(() => {
+    const paragraphs = paragraphsRef.current;
+    const index = paragraphIndexRef.current;
+
+    if (index >= paragraphs.length) {
+      handleStopSpeak();
+      return;
+    }
+
+    speakParagraphWithHighlight(paragraphs[index], () => {
+      paragraphIndexRef.current = index + 1;
+      // Small delay between paragraphs for natural pause
+      setTimeout(() => {
+        if (paragraphsRef.current.length > 0) { // Check if still reading
+          readNextParagraph();
+        }
+      }, 500);
+    });
+  }, [speakParagraphWithHighlight, handleStopSpeak]);
+
   // Read next verse in sequence
   const readNextVerse = useCallback(() => {
     const verses = versesRef.current;
@@ -307,6 +425,25 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }, 300);
     });
   }, [speakSingleVerse, handleStopSpeak]);
+
+  // Start paragraph-by-paragraph reading
+  const startParagraphReading = useCallback((text: string) => {
+    window.speechSynthesis.cancel();
+    const parsed = parseParagraphs(text, speechRateRef.current);
+
+    if (parsed.length === 0) {
+      logger.warn('No paragraphs parsed from text');
+      return;
+    }
+
+    paragraphsRef.current = parsed;
+    paragraphIndexRef.current = 0;
+    setIsSpeaking(true);
+    setPlayingSource('generated-paragraph');
+
+    requestWakeLock();
+    readNextParagraph();
+  }, [readNextParagraph]);
 
   // Start verse-by-verse reading
   const startVerseReading = useCallback((text: string) => {
@@ -366,7 +503,35 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return;
       }
 
-      // Non-bible content: use legacy mode
+      // Generated content: use paragraph mode
+      if (contextType === 'generated') {
+        if (isSpeaking && playingSource === sourceId) {
+          handleStopSpeak();
+          return;
+        }
+
+        const targetLang = audioTargetLang || currentLang;
+        let textForReading = textToSpeak;
+
+        if (targetLang !== currentLang) {
+          setIsPreparingAudio(true);
+          setPlayingSource(sourceId);
+          try {
+            textForReading = await translateForAudio(textToSpeak, targetLang);
+            logger.log(`Fetched ${targetLang} translation for audio`);
+          } catch (e) {
+            logger.error('Failed to fetch translation for audio', e);
+            textForReading = textToSpeak;
+          }
+          setIsPreparingAudio(false);
+        }
+
+        await requestWakeLock();
+        startParagraphReading(textForReading);
+        return;
+      }
+
+      // Legacy: Non-bible content without specific context type
       if (isSpeaking && playingSource === sourceId) {
         handleStopSpeak();
         return;
@@ -440,7 +605,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       currentLang,
       bibleRef,
       handleStopSpeak,
-      startVerseReading
+      startVerseReading,
+      startParagraphReading
     ]
   );
 

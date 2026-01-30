@@ -67,7 +67,7 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ loading, content, ty
       <div className="flex justify-end mb-4">
         <AudioControls content={content} sourceId={type} type="generated" />
       </div>
-      <SimpleMarkdown text={content} />
+      <SimpleMarkdown text={content} enableParagraphTracking={true} />
     </div>
   );
 };
