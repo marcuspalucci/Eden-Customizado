@@ -1,4 +1,5 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const functions = require("firebase-functions");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const admin = require("firebase-admin");
 const { z } = require("zod");
@@ -15,12 +16,29 @@ const defaultFunctionOptions = {
 let genAIInstance;
 function getGenAI() {
   if (!genAIInstance) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Tentar obter da variável de ambiente primeiro, depois da configuração do Firebase
+    let apiKey = process.env.GEMINI_API_KEY;
+
     if (!apiKey) {
-      console.error("❌ CRÍTICO: GEMINI_API_KEY não encontrada no process.env!");
+      try {
+        // Fallback para Firebase Runtime Config
+        const config = functions.config();
+        apiKey = config.gemini?.api_key;
+        if (apiKey) {
+          console.log("✅ API key carregada do Firebase Runtime Config");
+        }
+      } catch (e) {
+        console.warn("Não foi possível acessar firebase-functions.config():", e.message);
+      }
+    }
+
+    if (!apiKey) {
+      console.error("❌ CRÍTICO: GEMINI_API_KEY não encontrada!");
+      console.error("Procurado em: process.env.GEMINI_API_KEY ou functions.config().gemini.api_key");
       throw new HttpsError("failed-precondition", "Configuração de API ausente no servidor");
     }
     genAIInstance = new GoogleGenerativeAI(apiKey);
+    console.log("✅ Instância de IA inicializada com sucesso");
   }
   return genAIInstance;
 }

@@ -18,7 +18,12 @@
       "Bash(findstr:*)",
       "Bash(tasklist:*)",
       "Bash(wmic process where processid=19468 delete)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(vercel deploy:*)",
+      "Bash(firebase functions:config:get:*)",
+      "Bash(firebase functions:config:set:*)",
+      "Bash(firebase experiments:enable:*)",
+      "Bash(gcloud functions deploy:*)"
     ]
   }
 }
