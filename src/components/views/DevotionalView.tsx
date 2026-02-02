@@ -29,16 +29,19 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
   const formatShareText = () => {
     if (!content) return '';
     const appUrl = window.location.origin;
-    return `*${content.title}*\n\n"${content.scriptureText}"\n(${content.scriptureReference})\n\n${content.reflection}\n\n*Oração:*\n"${content.prayer}"\n\n_${content.finalQuote}_\n\nVia App ÉDEN: ${appUrl}`;
+    const dateStr = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const header = topic === '[Devocional do Dia]'
+      ? `*Palavra do Dia - ${dateStr}*\n`
+      : `*Devocional ÉDEN - ${dateStr}*\n`;
+
+    return `${header}\n*${content.title}*\n\n"${content.scriptureText}"\n(${content.scriptureReference})\n\n${content.reflection}\n\n*Oração:*\n"${content.prayer}"\n\n_${content.finalQuote}_\n\nVia App ÉDEN: ${appUrl}`;
   };
 
-  const shareToSocial = (platform: 'whatsapp' | 'twitter' | 'copy') => {
+  const shareToSocial = (platform: 'whatsapp' | 'copy') => {
     const text = formatShareText();
     const encoded = encodeURIComponent(text);
     if (platform === 'whatsapp') {
       window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
-    } else if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?text=${encoded}`, '_blank');
     } else if (platform === 'copy') {
       navigator.clipboard.writeText(text);
       alert(t('copied'));
@@ -56,33 +59,21 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
             type="text"
             className="flex-1 bg-bible-bg border border-bible-border rounded-lg px-4 py-2 text-bible-text outline-none focus:border-bible-accent transition-colors"
             placeholder={t('devotionalPlaceholder')}
-            value={topic}
+            value={topic === '[Devocional do Dia]' ? '' : topic}
             onChange={(e) => onTopicChange(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && topic && onGenerate()}
           />
           <div className="flex gap-2 w-full sm:w-auto">
             <button
-              onClick={onGetDaily}
-              disabled={loading}
-              className="flex-1 sm:flex-initial px-4 py-2 bg-bible-secondary text-bible-text text-sm sm:text-base font-bold rounded-lg hover:bg-bible-secondary/80 transition-all shadow-md active:transform active:scale-95 disabled:opacity-50"
-              title="Devocional do Dia"
-            >
-              {loading ? <i className="fas fa-spinner fa-spin"></i> : (
-                <>
-                  <i className="fas fa-calendar-day mr-2"></i>
-                  <span className="hidden sm:inline">Do Dia</span>
-                </>
-              )}
-            </button>
-            <button
               onClick={onGenerate}
-              disabled={!topic || loading}
+              disabled={!topic || topic === '[Devocional do Dia]' || loading}
               className="flex-1 sm:flex-initial px-4 sm:px-6 py-2 bg-bible-accent text-white text-sm sm:text-base font-bold rounded-lg hover:bg-bible-accent-hover transition-all shadow-md active:transform active:scale-95 disabled:opacity-50"
             >
               {loading ? <i className="fas fa-spinner fa-spin"></i> : (
                 <>
                   <i className="fas fa-edit mr-2"></i>
-                  <span className="hidden sm:inline">Gerar</span>
+                  <span className="hidden sm:inline">Gerar Tema</span>
+                  <span className="sm:hidden">Gerar</span>
                 </>
               )}
             </button>
@@ -103,12 +94,34 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
             <p className="text-sm font-bold uppercase tracking-widest">Preparando seu coração...</p>
           </div>
         ) : !content ? (
-          <div className="text-center py-20 opacity-50">
-            <i className="fas fa-dove text-6xl mb-4 text-bible-border"></i>
-            <p>Digite um tema acima para começar seu momento com Deus.</p>
+          <div className="flex flex-col items-center justify-center h-full py-10 opacity-90">
+            <div className="bg-white/50 backdrop-blur-sm p-8 rounded-2xl border border-bible-border shadow-lg max-w-md w-full text-center hover:shadow-xl transition-shadow cursor-pointer group" onClick={onGetDaily}>
+              <div className="w-16 h-16 bg-bible-accent/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                <i className="fas fa-dove text-2xl text-bible-accent"></i>
+              </div>
+              <h3 className="text-xl font-serif font-bold text-bible-text mb-2">Palavra do Dia</h3>
+              <p className="text-bible-text-light text-sm mb-6">
+                Receba uma mensagem bíblica inspiradora preparada especialmente para hoje, {new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}.
+              </p>
+              <button
+                onClick={(e) => { e.stopPropagation(); onGetDaily(); }}
+                className="w-full py-3 bg-bible-accent text-white font-bold rounded-lg hover:bg-bible-accent-hover transition-colors shadow-md"
+              >
+                Ler Devocional de Hoje
+              </button>
+            </div>
+            <p className="mt-8 text-bible-text-light/60 text-sm">Ou digite um tema acima para algo específico.</p>
           </div>
         ) : (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
+            {topic === '[Devocional do Dia]' && (
+              <div className="text-center mb-6">
+                <span className="inline-block px-4 py-1 rounded-full bg-bible-accent/10 text-bible-accent text-xs font-bold uppercase tracking-widest">
+                  Palavra do Dia • {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </span>
+              </div>
+            )}
+
             <div className="flex justify-end mb-4">
               <AudioControls
                 content={`Título: ${content.title}. Leitura: ${content.scriptureText}. Reflexão: ${content.reflection}. Oração: ${content.prayer}`}
@@ -151,12 +164,6 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
                 className="w-12 h-12 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
               >
                 <i className="fab fa-whatsapp text-2xl"></i>
-              </button>
-              <button
-                onClick={() => shareToSocial('twitter')}
-                className="w-12 h-12 rounded-full bg-black text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
-              >
-                <i className="fab fa-x-twitter text-xl"></i>
               </button>
               <button
                 onClick={() => shareToSocial('copy')}
