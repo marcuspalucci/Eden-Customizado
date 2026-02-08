@@ -96,10 +96,15 @@ export const App: React.FC = () => {
     if (lang === 'en') suggestedTranslation = 'NIV';
     else if (lang === 'es') suggestedTranslation = 'NVI-ES';
 
-    if (age < 12 && age > 0) {
-      if (lang === 'pt') suggestedTranslation = 'Bíblia Infantil';
-      else if (lang === 'en') suggestedTranslation = 'Kids Bible';
-      else if (lang === 'es') suggestedTranslation = 'Biblia Niños';
+    if (age > 0) {
+      if (age < 12) {
+        if (lang === 'pt') suggestedTranslation = 'Bíblia Infantil';
+        else if (lang === 'en') suggestedTranslation = 'Kids Bible';
+        else if (lang === 'es') suggestedTranslation = 'Biblia Niños';
+      } else if (age >= 12 && age < 18) {
+        if (lang === 'pt') suggestedTranslation = 'Bíblia Teen';
+        // Para EN e ES, mantém o padrão ou define uma tradução teen se existir
+      }
     }
     setBibleRef((prev: BibleReference) => ({ ...prev, translation: suggestedTranslation }));
   };
@@ -378,7 +383,8 @@ export const App: React.FC = () => {
         bibleRef.book,
         bibleRef.chapter,
         bibleText,
-        currentLang
+        currentLang,
+        user?.age
       );
       setTheologyContent(res);
     } catch (e) {
@@ -386,7 +392,7 @@ export const App: React.FC = () => {
     } finally {
       setLoading((prev: LoadingState) => ({ ...prev, theology: false }));
     }
-  }, [bibleRef.book, bibleRef.chapter, bibleText, currentLang, handleError]);
+  }, [bibleRef.book, bibleRef.chapter, bibleText, currentLang, user?.age, handleError]);
 
   const handleGenerateExegesis = useCallback(async () => {
     setLoading((prev: LoadingState) => ({ ...prev, exegesis: true }));
@@ -394,7 +400,8 @@ export const App: React.FC = () => {
       const res = await generateExegesisAnalysis(
         `${bibleRef.book} ${bibleRef.chapter}`,
         bibleText,
-        currentLang
+        currentLang,
+        user?.age
       );
       setExegesisContent(res);
     } catch (e) {
@@ -402,7 +409,7 @@ export const App: React.FC = () => {
     } finally {
       setLoading((prev: LoadingState) => ({ ...prev, exegesis: false }));
     }
-  }, [bibleRef.book, bibleRef.chapter, bibleText, currentLang, handleError]);
+  }, [bibleRef.book, bibleRef.chapter, bibleText, currentLang, user?.age, handleError]);
 
   const handleParallelClick = useCallback((ref: string) => {
     const match = ref.match(/^(.*?)\s+(\d+):(\d+).*$/);
@@ -778,7 +785,8 @@ export const App: React.FC = () => {
       const content = await generateExegesisAnalysis(
         'Texto Selecionado',
         exegesisInput,
-        currentLang
+        currentLang,
+        user?.age
       );
       setExegesisContent(content);
       if (auth.currentUser) saveHistory('custom_exegesis', exegesisInput.substring(0, 50));
@@ -787,7 +795,7 @@ export const App: React.FC = () => {
     } finally {
       setLoading((prev) => ({ ...prev, exegesis: false }));
     }
-  }, [exegesisInput, currentLang, handleError]);
+  }, [exegesisInput, currentLang, user?.age, handleError]);
 
   const handleResetExegesis = useCallback(async () => {
     setExegesisInput('');
@@ -796,7 +804,8 @@ export const App: React.FC = () => {
       const data = await generateExegesisAnalysis(
         `${bibleRef.book} ${bibleRef.chapter}`,
         bibleText,
-        currentLang
+        currentLang,
+        user?.age
       );
       setExegesisContent(data);
     } catch (err) {

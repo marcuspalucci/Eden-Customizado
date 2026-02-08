@@ -54,11 +54,12 @@ export const getBibleContent = async (
   translation: string,
   lang: Language = 'pt'
 ): Promise<string> => {
-  const cacheKey = `bible_${translation}_${book}_${chapter}_${lang}`;
+  // CRITICAL: Force version suffix (_v2) to invalidate old cache with wrong language
+  const cacheKey = `bible_${translation}_${book}_${chapter}_${lang}_v2`;
   const memoryCached = getFromCache(cacheKey);
   if (memoryCached) return memoryCached;
 
-  const cacheId = `${translation}_${book}_${chapter}_${lang}`.replace(/\s+/g, '_').replace(/[/.]/g, '');
+  const cacheId = `${translation}_${book}_${chapter}_${lang}_v2`.replace(/\s+/g, '_').replace(/[/.]/g, '');
   const cacheRef = db.collection('bible_cache').doc(cacheId);
 
   try {
@@ -81,7 +82,18 @@ export const getBibleContent = async (
 
   try {
     const getBibleContentFn = functions.httpsCallable('getBibleContent');
-    const result = await getBibleContentFn({ book, chapter, translation, lang });
+    // HACK: Forçar contexto de idioma no nome do livro para evitar que a IA confunda "Josué" (PT) com "Josué" (ES)
+    // Isso ajuda a desambiguar nomes que são iguais em ambos os idiomas.
+    const contextBook = lang === 'pt' ? `${book} (Bíblia em Português)` : book;
+
+    // HACK 2: Forçar contexto de idioma na tradução também
+    // Se for PT e NVI, enviar "NVI (Edição Brasileira)" para garantir que o modelo não use NVI Español
+    let contextTranslation = translation;
+    if (lang === 'pt' && !translation.includes('Português') && !translation.includes('Brasileira')) {
+      contextTranslation = `${translation} (Edição Brasileira - Bíblia em Português)`;
+    }
+
+    const result = await getBibleContentFn({ book: contextBook, chapter, translation: contextTranslation, lang });
     const data = result.data as { success: boolean; text: string };
     if (!data.success) throw new Error('Falha na geração do conteúdo bíblico');
 
@@ -275,30 +287,100 @@ export const getWordDefinition = async (original: string, strong: string, contex
   } catch (err) { throw handleApiError(err, 'getWordDefinition'); }
 };
 
-export const generateTheologyAnalysis = async (book: string, chapter: number, context: string, lang: Language = 'pt'): Promise<string> => {
-  const cacheKey = `theology_${book}_${chapter}_${lang}`;
-  const cached = getFromCache(cacheKey);
-  if (cached) return cached;
+// 4. generateTheologyAnalysis
+export const generateTheologyAnalysis = async (
+  book: string,
+  chapter: number,
+  context: string,
+  lang: Language = 'pt',
+  age?: number
+): Promise<string> => {
+  const cacheKey = `theology_${book}_${chapter}_${lang}_${age || 'all'}`;
+  const memoryCached = getFromCache(cacheKey);
+  if (memoryCached) return memoryCached;
+
+  const cacheId = `${book}_${chapter}_${lang}_${age || 'all'}_theology`.replace(/\s+/g, '_');
+  const cacheRef = db.collection('analysis_cache').doc(cacheId);
+
   try {
-    const theologyFn = functions.httpsCallable('generateTheologyAnalysis');
-    const result = await theologyFn({ book, chapter, context, lang });
+    const doc = await cacheRef.get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (data?.text) {
+        setInCache(cacheKey, data.text);
+        return data.text;
+      }
+    }
+
+    const generateTheologyAnalysisFn = functions.httpsCallable('generateTheologyAnalysis');
+    const result = await generateTheologyAnalysisFn({ book, chapter, context, lang, age });
     const data = result.data as { success: boolean; text: string };
-    if (data.text) setInCache(cacheKey, data.text);
-    return data.text || 'Error.';
-  } catch (err) { throw handleApiError(err, 'generateTheologyAnalysis'); }
+
+    if (!data.success) throw new Error('Falha na análise teológica');
+
+    await cacheRef.set({
+      text: data.text,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      book,
+      chapter,
+      lang,
+      type: 'theology',
+      age: age || null
+    });
+
+    setInCache(cacheKey, data.text);
+    return data.text;
+  } catch (error) {
+    throw handleApiError(error, 'generateTheologyAnalysis');
+  }
 };
 
-export const generateExegesisAnalysis = async (referenceTitle: string, context: string, lang: Language = 'pt'): Promise<string> => {
-  const cacheKey = `exegesis_${referenceTitle}_${lang}`;
-  const cached = getFromCache(cacheKey);
-  if (cached) return cached;
+// 5. generateExegesisAnalysis
+export const generateExegesisAnalysis = async (
+  referenceTitle: string,
+  context: string,
+  lang: Language = 'pt',
+  age?: number
+): Promise<string> => {
+  // Exegese pode ser de um capítulo ou texto livre, então usamos hash ou algo simples para cache
+  const safeRef = referenceTitle.replace(/[^a-zA-Z0-9]/g, '_');
+  const cacheKey = `exegesis_${safeRef}_${lang}_${age || 'all'}`;
+
+  const memoryCached = getFromCache(cacheKey);
+  if (memoryCached) return memoryCached;
+
+  // Para exegese customizada (texto livre), talvez não queiramos cache persistente tão agressivo
+  // Mas para capítulos, sim. Vamos tentar cachear.
+  const cacheId = `exegesis_${safeRef}_${lang}_${age || 'all'}`.substring(0, 100); // Limite tamanho ID
+  const cacheRef = db.collection('analysis_cache').doc(cacheId);
+
   try {
-    const exegesisFn = functions.httpsCallable('generateExegesisAnalysis');
-    const result = await exegesisFn({ referenceTitle, context, lang });
+    const doc = await cacheRef.get();
+    if (doc.exists) {
+      setInCache(cacheKey, doc.data()?.text);
+      return doc.data()?.text;
+    }
+
+    const generateExegesisAnalysisFn = functions.httpsCallable('generateExegesisAnalysis');
+    const result = await generateExegesisAnalysisFn({ referenceTitle, context, lang, age });
     const data = result.data as { success: boolean; text: string };
-    if (data.text) setInCache(cacheKey, data.text);
-    return data.text || 'Error.';
-  } catch (err) { throw handleApiError(err, 'generateExegesisAnalysis'); }
+
+    if (!data.success) throw new Error('Falha na exegese');
+
+    await cacheRef.set({
+      text: data.text,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      referenceTitle,
+      lang,
+      type: 'exegesis',
+      age: age || null
+    });
+
+    setInCache(cacheKey, data.text);
+    return data.text;
+  } catch (error) {
+    throw handleApiError(error, 'generateExegesisAnalysis');
+  }
 };
 
 export const generateDailyDevotional = async (topic: string, age?: number, lang: Language = 'pt'): Promise<DevotionalContent | null> => {

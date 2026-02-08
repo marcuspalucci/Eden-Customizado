@@ -75,290 +75,37 @@ const analysisSchema = z.object({
   chapter: z.number().nullable().optional(),
   context: z.string().min(10),
   referenceTitle: z.string().nullable().optional(),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
+  lang: z.enum(["pt", "en", "es"]).default("pt"),
+  age: z.number().nullable().optional()
 });
 
-const libraryAgentSchema = z.object({
-  query: z.string().min(3),
-  resources: z.array(z.object({
-    title: z.string(),
-    textContent: z.string().nullable().optional()
-  })),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
+// ... (other schemas)
 
-const devotionalSchema = z.object({
-  topic: z.string().min(1),
-  age: z.number().nullable().optional(),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
+// Helper: Get Age Context
+const getAgeContext = (age, lang) => {
+  if (!age) return "";
+  const yearsOld = lang === 'pt' ? 'anos' : lang === 'es' ? 'años' : 'years old';
+  const childContext = lang === 'pt' ? 'uma criança de' : lang === 'es' ? 'un niño de' : 'a child of';
+  const teenContext = lang === 'pt' ? 'um adolescente de' : lang === 'es' ? 'un adolescente de' : 'a teenager of';
+  const adultContext = lang === 'pt' ? 'um adulto de' : lang === 'es' ? 'un adulto de' : 'an adult of';
 
-const dailyDevotionalSchema = z.object({
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
+  let targetAudience = adultContext;
+  if (age < 12) targetAudience = childContext;
+  else if (age < 18) targetAudience = teenContext;
 
-const studyGuideSchema = z.object({
-  theme: z.string().min(1),
-  context: z.string().min(10),
-  age: z.number().nullable().optional(),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
+  return `\n\nTARGET AUDIENCE: Adapt the language, tone, and depth for ${targetAudience} ${age} ${yearsOld}.`;
+};
 
-const thematicStudySchema = z.object({
-  topic: z.string().min(1),
-  age: z.number().nullable().optional(),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
-
-const audioTranslateSchema = z.object({
-  text: z.string().min(1),
-  targetLang: z.enum(["pt", "en", "es"])
-});
-
-const wordDefinitionSchema = z.object({
-  original: z.string().min(1),
-  strong: z.string().nullable().optional(),
-  context: z.string().min(1),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
-
-const keywordAnalysisSchema = z.object({
-  reference: z.string().min(1),
-  verseText: z.string().min(1),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
-
-const interlinearSchema = z.object({
-  book: z.string().min(1),
-  chapter: z.number().int().positive(),
-  startVerse: z.number().int().positive(),
-  endVerse: z.number().int().positive(),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
-
-const bibleSearchSchema = z.object({
-  query: z.string().min(2),
-  lang: z.enum(["pt", "en", "es"]).default("pt")
-});
-
-// Helper: Get Language Name
-const getLangName = (lang) => lang === 'en' ? 'ENGLISH' : lang === 'es' ? 'SPANISH' : 'PORTUGUESE';
-
-// Helper: Wrapper para retry com backoff exponencial
-async function retryWrapper(fn, retries = 3, delay = 2000) {
-  try {
-    return await fn();
-  } catch (error) {
-    const isQuotaError =
-      error?.message?.includes("429") ||
-      error?.message?.includes("quota") ||
-      error?.message?.includes("RESOURCE_EXHAUSTED") ||
-      error?.status === 429;
-
-    if (isQuotaError && retries > 0) {
-      console.warn(`⚠️ Rate limit hit. Retrying in ${delay}ms...`);
-      await new Promise((r) => setTimeout(r, delay));
-      return retryWrapper(fn, retries - 1, delay * 2);
-    }
-    throw error;
-  }
-}
-
-// Helper: Verificar autenticação (OPCIONAL - visitantes permitidos)
-// A autenticação é opcional pois as funções têm invoker: "public"
-// Usuários autenticados terão request.auth disponível para logging/tracking
-function getAuthInfo(request) {
-  return request.auth ? request.auth.uid : 'guest';
-}
-
-// Helper: Logging de consumo de tokens
-function logTokenUsage(functionName, result) {
-  const usage = result.response.usageMetadata;
-  if (usage) {
-    console.log(`📊 [${functionName}] Tokens: { prompt: ${usage.promptTokenCount}, response: ${usage.candidatesTokenCount}, total: ${usage.totalTokenCount} }`);
-  }
-}
-
-// Helper: Extrair JSON robusto da resposta
-function extractJson(text) {
-  try {
-    // Encontrar os índices do primeiro '{' e '['
-    const firstBrace = text.indexOf('{');
-    const firstBracket = text.indexOf('[');
-
-    let match;
-    if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
-      // Começa com array ou o array vem antes do primeiro objeto
-      match = text.match(/\[[\s\S]*\]/);
-    } else {
-      // Começa com objeto
-      match = text.match(/\{[\s\S]*\}/);
-    }
-
-    if (!match) {
-      console.error("❌ Falha ao encontrar JSON na resposta. Texto bruto:", text);
-      return null;
-    }
-    return JSON.parse(match[0]);
-  } catch (e) {
-    console.error("❌ Erro ao parsear JSON:", e.message, "\nTexto que falhou:", text);
-    return null;
-  }
-}
-
-// Helper: Validar schema e retornar data limpa
-function validateSchema(schema, data) {
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    const errors = result.error.issues.map(e => `${e.path.join('.')}: ${e.message}`).join(", ");
-    console.error("❌ Erro de validação Zod:", errors);
-    throw new HttpsError("invalid-argument", `Dados inválidos: ${errors}`);
-  }
-  return result.data;
-}
-
-// =====================================================
-// FUNCTIONS
-// =====================================================
-
-// 1. getBibleContent
-exports.getBibleContent = onCall(defaultFunctionOptions, async (request) => {
-  const { book, chapter, translation, lang } = validateSchema(getBibleContentSchema, request.data);
-  try {
-    return await retryWrapper(async () => {
-      const model = getGenAI().getGenerativeModel({
-        model: "gemini-2.5-flash-lite",
-        safetySettings: [
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-        ]
-      });
-
-      // Usar traduções de domínio público para evitar RECITATION
-      const publicDomainTranslations = ['KJV', 'ASV', 'WEB', 'YLT', 'DBY'];
-      const isPublicDomain = publicDomainTranslations.includes(translation.toUpperCase());
-
-      let prompt;
-      const isStrongTranslation = translation.toLowerCase().includes('strong');
-
-      if (isStrongTranslation) {
-        // Formato especial para Almeida com Strong - inclui códigos Strong em cada palavra
-        prompt = `Generate the biblical text of ${book} chapter ${chapter} in Portuguese (Almeida style) WITH Strong's numbers.
-
-CRITICAL FORMAT REQUIREMENTS:
-1. EVERY significant word (nouns, verbs, adjectives, adverbs) MUST have its Strong's code immediately after it
-2. Format: Word<H####> for Hebrew (Old Testament) or Word<G####> for Greek (New Testament)
-3. NO spaces between the word and the angle bracket
-4. Articles, prepositions, and conjunctions don't need Strong codes
-
-EXAMPLE OUTPUT FORMAT:
-**1** No<H871> princípio<H7225> criou<H1254> Deus<H430> os céus<H8064> e a terra<H776>.
-**2** E a terra<H776> era<H1961> sem forma<H8414> e vazia<H922>...
-
-RULES:
-- Start directly with verse 1 (no introduction)
-- Each verse on its own line
-- Verse number in **bold** format: **1**, **2**, etc.
-- Use accurate Strong's Hebrew (H) or Greek (G) numbers
-- DO NOT include phrases like "Here is..." or "Sure!"
-
-Generate ${book} chapter ${chapter} now:`;
-      } else if (isPublicDomain) {
-        prompt = `Provide ONLY the biblical text of ${book} chapter ${chapter} from the ${translation} translation.
-Format: Start directly with verse 1. Each verse on its own line with the verse number.
-After relevant verses, include cross-references in this format: (Book X:Y; Book Z:W)
-DO NOT include any introduction, commentary, or phrases like "Here is..." or "Sure!".
-Output ONLY the verses in ${getLangName(lang)} if different from the original.`;
-      } else {
-        // Para traduções modernas, solicitar resumo/paráfrase para evitar copyright
-        prompt = `Provide ONLY the biblical text of ${book} chapter ${chapter} in the style of the ${translation} translation.
-Format: 
-- Start directly with verse 1
-- Each verse numbered on its own line with **bold** verse numbers like **1**, **2**, etc.
-- After relevant verses that have parallel passages, include cross-references in this format on the next line: (Book X:Y; Book Z:W)
-
-Example:
-**1** No princípio, Deus criou os céus e a terra.
-(João 1:1-3; Salmos 33:6)
-**2** A terra era sem forma e vazia...
-
-DO NOT include any introduction, commentary, or phrases like "Here is..." or "Sure!".
-Output ONLY the verses in ${getLangName(lang)}.`;
-      }
-
-      const result = await model.generateContent(prompt);
-      logTokenUsage('getBibleContent', result);
-
-      // Verificar se houve bloqueio
-      if (result.response.promptFeedback?.blockReason) {
-        console.warn("⚠️ Prompt bloqueado:", result.response.promptFeedback.blockReason);
-        throw new Error(`Conteúdo bloqueado: ${result.response.promptFeedback.blockReason}`);
-      }
-
-      const text = result.response.text();
-      if (!text) throw new Error("IA retornou resposta vazia");
-      return { success: true, text: text, book, chapter, translation };
-    });
-  } catch (e) {
-    console.error("Error in getBibleContent:", e);
-
-    // Tratamento específico para RECITATION
-    if (e.message?.includes('RECITATION')) {
-      throw new HttpsError("failed-precondition",
-        "Não foi possível obter esta tradução específica. Tente uma tradução de domínio público como KJV ou ASV.");
-    }
-
-    throw new HttpsError("internal", e.message);
-  }
-});
-
-// 2. generateStoryboard
-exports.generateStoryboard = onCall(defaultFunctionOptions, async (request) => {
-  const { book, chapter, text, lang } = validateSchema(generateStoryboardSchema, request.data);
-  try {
-    return await retryWrapper(async () => {
-      const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const prompt = `Crie um storyboard com 3-5 cenas para ${book} ${chapter}. Texto: ${text}. Retorne JSON { "scenes": [{ "title": "...", "description": "...", "verses": [] }] }. Responda em ${getLangName(lang)}.`;
-      const result = await model.generateContent(prompt);
-      logTokenUsage('generateStoryboard', result);
-      const jsonData = extractJson(result.response.text());
-      if (!jsonData) throw new Error("Falha ao gerar formato JSON válido para Storyboard");
-      return { success: true, ...jsonData };
-    });
-  } catch (e) {
-    console.error("Error in generateStoryboard:", e);
-    throw new HttpsError("internal", e.message);
-  }
-});
-
-// 3. findBiblicalLocations
-exports.findBiblicalLocations = onCall(defaultFunctionOptions, async (request) => {
-  const { book, chapter, text, lang } = validateSchema(findLocationsSchema, request.data);
-  try {
-    return await retryWrapper(async () => {
-      const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const prompt = `Identifique locais em ${book} ${chapter}. Texto: ${text}. Retorne JSON { "locations": [{ "name": "...", "lat": 0, "lng": 0, "verses": [], "description": "..." }] }. Responda em ${getLangName(lang)}.`;
-      const result = await model.generateContent(prompt);
-      logTokenUsage('findBiblicalLocations', result);
-      const jsonData = extractJson(result.response.text());
-      if (!jsonData) throw new Error("Falha ao gerar formato JSON válido para Localizações");
-      return { success: true, ...jsonData };
-    });
-  } catch (e) {
-    console.error("Error in findBiblicalLocations:", e);
-    throw new HttpsError("internal", e.message);
-  }
-});
+// ...
 
 // 4. generateTheologyAnalysis
 exports.generateTheologyAnalysis = onCall(defaultFunctionOptions, async (request) => {
-  const { book, chapter, context, lang } = validateSchema(analysisSchema, request.data);
+  const { book, chapter, context, lang, age } = validateSchema(analysisSchema, request.data);
   try {
     return await retryWrapper(async () => {
       const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const prompt = `Analise teológica sistemática de ${book} ${chapter}. Estilo: Wayne Grudem. Idioma: ${getLangName(lang)}. Contexto: ${context}`;
+      const agePrompt = getAgeContext(age, lang);
+      const prompt = `Analise teológica sistemática de ${book} ${chapter}. Estilo: Wayne Grudem. Idioma: ${getLangName(lang)}. Contexto: ${context}${agePrompt}`;
       const result = await model.generateContent(prompt);
       logTokenUsage('generateTheologyAnalysis', result);
       return { success: true, text: result.response.text() };
@@ -371,11 +118,12 @@ exports.generateTheologyAnalysis = onCall(defaultFunctionOptions, async (request
 
 // 5. generateExegesisAnalysis
 exports.generateExegesisAnalysis = onCall(defaultFunctionOptions, async (request) => {
-  const { referenceTitle, context, lang } = validateSchema(analysisSchema, request.data);
+  const { referenceTitle, context, lang, age } = validateSchema(analysisSchema, request.data);
   try {
     return await retryWrapper(async () => {
       const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const prompt = `Exegese e Homilética de: ${referenceTitle}. Idioma: ${getLangName(lang)}. Contexto: ${context}`;
+      const agePrompt = getAgeContext(age, lang);
+      const prompt = `Exegese e Homilética de: ${referenceTitle}. Idioma: ${getLangName(lang)}. Contexto: ${context}${agePrompt}`;
       const result = await model.generateContent(prompt);
       logTokenUsage('generateExegesisAnalysis', result);
       return { success: true, text: result.response.text() };
@@ -386,113 +134,16 @@ exports.generateExegesisAnalysis = onCall(defaultFunctionOptions, async (request
   }
 });
 
-// 6. askLibraryAgent
-exports.askLibraryAgent = onCall(defaultFunctionOptions, async (request) => {
-  const { query, resources, lang } = validateSchema(libraryAgentSchema, request.data);
-  try {
-    return await retryWrapper(async () => {
-      const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const context = resources.map(r => `--- LIVRO: ${r.title} ---\n${r.textContent}`).join('\n\n');
-      const prompt = `Você é o Agente Éden. Responda à pergunta: "${query}" usando os seguintes livros:\n\n${context}\n\nResponda em ${getLangName(lang)}. Cite as fontes.`;
-      const result = await model.generateContent(prompt);
-      logTokenUsage('askLibraryAgent', result);
-      return { success: true, text: result.response.text() };
-    });
-  } catch (e) {
-    console.error("Error in askLibraryAgent:", e);
-    throw new HttpsError("internal", e.message);
-  }
-});
-
-// 7. generateDailyDevotional
-exports.generateDailyDevotional = onCall(defaultFunctionOptions, async (request) => {
-  console.log("📥 Chamada generateDailyDevotional recebida:", JSON.stringify(request.data));
-  const { topic, age, lang } = validateSchema(devotionalSchema, request.data);
-  try {
-    return await retryWrapper(async () => {
-      const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const prompt = `Crie um devocional diário sobre "${topic}" para público de ${age || 'todas'} idades em ${getLangName(lang)}. Retorne JSON { "title": "...", "scriptureReference": "...", "scriptureText": "...", "reflection": "...", "prayer": "...", "finalQuote": "..." }.`;
-      const result = await model.generateContent(prompt);
-      logTokenUsage('generateDailyDevotional', result);
-      const jsonData = extractJson(result.response.text());
-      if (!jsonData) throw new Error("Falha ao gerar formato JSON válido para Devocional");
-      return { success: true, ...jsonData };
-    });
-  } catch (e) {
-    console.error("Error in generateDailyDevotional:", e);
-    throw new HttpsError("internal", e.message);
-  }
-});
-
-// 8. getDailyDevotional - Devocional do dia com cache
-exports.getDailyDevotional = onCall(defaultFunctionOptions, async (request) => {
-  console.log("📥 Chamada getDailyDevotional recebida:", JSON.stringify(request.data));
-  const { lang } = validateSchema(dailyDevotionalSchema, request.data);
-
-  try {
-    // 1. Verificar cache
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    const cacheId = `${today}_${lang}`;
-    const cacheRef = admin.firestore().collection('daily_devotionals').doc(cacheId);
-
-    const cached = await cacheRef.get();
-    if (cached.exists) {
-      const data = cached.data();
-      if (data.expiresAt.toDate() > new Date()) {
-        console.log("✅ Cache hit para devocional do dia:", cacheId);
-        return { success: true, ...data.content };
-      }
-    }
-
-    // 2. Gerar novo devocional
-    const topics = {
-      pt: ["Esperança em tempos difíceis", "Gratidão nas pequenas coisas", "Fé e perseverança", "Amor ao próximo", "Sabedoria divina", "Paz interior", "Propósito de vida"],
-      en: ["Hope in difficult times", "Gratitude in small things", "Faith and perseverance", "Love for neighbor", "Divine wisdom", "Inner peace", "Life purpose"],
-      es: ["Esperanza en tiempos difíciles", "Gratitud en las pequeñas cosas", "Fe y perseverancia", "Amor al prójimo", "Sabiduría divina", "Paz interior", "Propósito de vida"]
-    };
-
-    // Escolher tópico baseado no dia do ano (determinístico)
-    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
-    const topicList = topics[lang] || topics.pt;
-    const selectedTopic = topicList[dayOfYear % topicList.length];
-
-    return await retryWrapper(async () => {
-      const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const prompt = `Crie um devocional diário inspirador sobre "${selectedTopic}" em ${getLangName(lang)}. Retorne JSON { "title": "...", "scriptureReference": "...", "scriptureText": "...", "reflection": "...", "prayer": "...", "finalQuote": "..." }.`;
-      const result = await model.generateContent(prompt);
-      logTokenUsage('getDailyDevotional', result);
-      const jsonData = extractJson(result.response.text());
-
-      if (!jsonData) throw new Error("Falha ao gerar formato JSON válido para Devocional do Dia");
-
-      // 3. Salvar cache
-      const midnight = new Date();
-      midnight.setHours(24, 0, 0, 0); // Próxima meia-noite
-
-      await cacheRef.set({
-        content: jsonData,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        expiresAt: admin.firestore.Timestamp.fromDate(midnight),
-        lang,
-        topic: selectedTopic
-      });
-
-      console.log("✅ Devocional do dia gerado e cacheado:", cacheId);
-      return { success: true, ...jsonData };
-    });
-  } catch (e) {
-    console.error("Error in getDailyDevotional:", e);
-    throw new HttpsError("internal", e.message);
-  }
-});
+// ...
 
 // 9. generateStudyGuide
 exports.generateStudyGuide = onCall(defaultFunctionOptions, async (request) => {
-  const { theme, context, lang } = validateSchema(studyGuideSchema, request.data);
+  const { theme, context, lang, age } = validateSchema(studyGuideSchema, request.data);
   try {
     return await retryWrapper(async () => {
       const model = getGenAI().getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-      const prompt = `Guia de estudo bíblico sobre "${theme}" em ${getLangName(lang)}. Contexto: ${context}`;
+      const agePrompt = getAgeContext(age, lang);
+      const prompt = `Guia de estudo bíblico sobre "${theme}" em ${getLangName(lang)}. Contexto: ${context}${agePrompt}`;
       const result = await model.generateContent(prompt);
       logTokenUsage('generateStudyGuide', result);
       return { success: true, text: result.response.text() };

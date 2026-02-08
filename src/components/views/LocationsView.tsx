@@ -124,6 +124,17 @@ export const LocationsView: React.FC<LocationsViewProps> = ({
           onClick={() => setFullScreenImage(null)}
         >
           <img src={fullScreenImage} className="max-w-full max-h-full p-4" alt="Full Screen Map" />
+
+          {/* Botão de Download */}
+          <a
+            href={fullScreenImage}
+            download={`eden_bible_map_${Date.now()}.png`}
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/10 hover:bg-white/20 backdrop-blur text-white px-6 py-3 rounded-full flex items-center gap-2 transition-all border border-white/20 shadow-lg group pointer-events-auto"
+          >
+            <i className="fas fa-download group-hover:scale-110 transition-transform"></i>
+            <span className="font-bold text-sm tracking-wide">BAIXAR MAPA</span>
+          </a>
         </div>
       )}
     </div>

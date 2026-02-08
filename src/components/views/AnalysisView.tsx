@@ -1,7 +1,7 @@
 import React from 'react';
 import SimpleMarkdown from '../SimpleMarkdown';
 import { AudioControls } from '../bible/AudioControls';
-// useLanguage import removido por não ser utilizado diretamente aqui
+import { useLanguage } from '../../contexts/LanguageContext';
 
 interface AnalysisViewProps {
   loading: boolean;
@@ -18,7 +18,28 @@ const typeLabels = {
 };
 
 export const AnalysisView: React.FC<AnalysisViewProps> = ({ loading, content, type, onGenerate, bookChapter }) => {
+  const { t } = useLanguage();
   const labels = typeLabels[type];
+
+  const formatShareText = () => {
+    if (!content) return '';
+    const appUrl = window.location.origin;
+    const dateStr = new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' });
+    const header = `*${labels.title} - ÉDEN*\nData: ${dateStr}\n`;
+
+    return `${header}\n${content}\n\nVia App ÉDEN: ${appUrl}`;
+  };
+
+  const shareToSocial = (platform: 'whatsapp' | 'copy') => {
+    const text = formatShareText();
+    const encoded = encodeURIComponent(text);
+    if (platform === 'whatsapp') {
+      window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(text);
+      alert(t('copied') || 'Copiado para a área de transferência!');
+    }
+  };
 
   if (loading) {
     return (
@@ -68,6 +89,23 @@ export const AnalysisView: React.FC<AnalysisViewProps> = ({ loading, content, ty
         <AudioControls content={content} sourceId={type} type="generated" />
       </div>
       <SimpleMarkdown text={content} enableParagraphTracking={true} />
+
+      <div className="flex justify-center gap-3 sm:gap-4 border-t border-bible-border pt-4 sm:pt-6 mt-6 sm:mt-8 pb-8">
+        <button
+          onClick={() => shareToSocial('whatsapp')}
+          className="w-12 h-12 rounded-full bg-[#25D366] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+          title="Compartilhar no WhatsApp"
+        >
+          <i className="fab fa-whatsapp text-2xl"></i>
+        </button>
+        <button
+          onClick={() => shareToSocial('copy')}
+          className="w-12 h-12 rounded-full bg-bible-text text-white flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+          title="Copiar"
+        >
+          <i className="fas fa-copy text-xl"></i>
+        </button>
+      </div>
     </div>
   );
 };
