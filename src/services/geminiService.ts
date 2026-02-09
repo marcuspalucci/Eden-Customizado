@@ -9,6 +9,7 @@ import {
   Language,
   DevotionalContent
 } from '../types';
+import firebase from 'firebase/compat/app';
 import { db, functions } from './firebase';
 import { logger } from '../utils/logger';
 import { handleApiError } from '../utils/errorHandler';
@@ -244,7 +245,9 @@ export const searchBibleReferences = async (query: string, lang: Language = 'pt'
 
 export const generateStudyGuide = async (theme: string, context: string, age?: number, lang: Language = 'pt'): Promise<string> => {
   try {
-    const studyGuideFn = functions.httpsCallable('generateStudyGuide');
+    console.log('Using generateStudyGuideV2 (Fix 404)');
+    // Call V2 function
+    const studyGuideFn = functions.httpsCallable('generateStudyGuideV2');
     const result = await studyGuideFn({ theme, context, age, lang });
     const data = result.data as { success: boolean; text: string };
     return data.text || 'Error.';
@@ -295,6 +298,7 @@ export const generateTheologyAnalysis = async (
   lang: Language = 'pt',
   age?: number
 ): Promise<string> => {
+  console.log('Using generateTheologyAnalysisV3 (Fix 403)');
   const cacheKey = `theology_${book}_${chapter}_${lang}_${age || 'all'}`;
   const memoryCached = getFromCache(cacheKey);
   if (memoryCached) return memoryCached;
@@ -312,7 +316,8 @@ export const generateTheologyAnalysis = async (
       }
     }
 
-    const generateTheologyAnalysisFn = functions.httpsCallable('generateTheologyAnalysis');
+    // Call V3 function (Attempt 3 - Fix Permissions)
+    const generateTheologyAnalysisFn = functions.httpsCallable('generateTheologyAnalysisV3');
     const result = await generateTheologyAnalysisFn({ book, chapter, context, lang, age });
     const data = result.data as { success: boolean; text: string };
 
@@ -342,6 +347,7 @@ export const generateExegesisAnalysis = async (
   lang: Language = 'pt',
   age?: number
 ): Promise<string> => {
+  console.log('Using generateExegesisAnalysisV3 (Fix 403)');
   // Exegese pode ser de um capítulo ou texto livre, então usamos hash ou algo simples para cache
   const safeRef = referenceTitle.replace(/[^a-zA-Z0-9]/g, '_');
   const cacheKey = `exegesis_${safeRef}_${lang}_${age || 'all'}`;
@@ -361,7 +367,8 @@ export const generateExegesisAnalysis = async (
       return doc.data()?.text;
     }
 
-    const generateExegesisAnalysisFn = functions.httpsCallable('generateExegesisAnalysis');
+    // Call V3 function (Attempt 3 - Fix Permissions)
+    const generateExegesisAnalysisFn = functions.httpsCallable('generateExegesisAnalysisV3');
     const result = await generateExegesisAnalysisFn({ referenceTitle, context, lang, age });
     const data = result.data as { success: boolean; text: string };
 

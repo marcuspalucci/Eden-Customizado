@@ -73,6 +73,20 @@ service cloud.firestore {
       allow delete, update: if isAdmin();
     }
     
+    // Cache de análises (teologia, exegese, estudo)
+    match /analysis_cache/{cacheId} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
+    // Cache de devocionais diários
+    match /daily_devotionals/{docId} {
+      allow read: if true;
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin();
+    }
+
     // Negar acesso a qualquer outra coleção não especificada
     match /{document=**} {
       allow read, write: if false;
