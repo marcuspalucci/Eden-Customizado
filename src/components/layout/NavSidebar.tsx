@@ -1,6 +1,7 @@
 import React from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { TabView } from '../../types';
+import { tabToPath } from '../../hooks/useAppOrchestrator';
 
 interface NavSidebarProps {
   activeTab: TabView;
@@ -9,35 +10,19 @@ interface NavSidebarProps {
   t: (key: string) => string;
 }
 
-// Mapeamento de TabView para rotas
-const tabToRoute: Record<TabView, string> = {
-  [TabView.READING]: '/',
-  [TabView.INTERLINEAR]: '/interlinear',
-  [TabView.STUDY_GUIDE]: '/study-guide',
-  [TabView.THEOLOGY]: '/theology',
-  [TabView.EXEGESIS]: '/exegesis',
-  [TabView.DEVOTIONALS]: '/devotionals',
-  [TabView.VISUALS]: '/visuals', // Mantido para compatibilidade de tipos
-  [TabView.LOCATIONS]: '/locations',
-  [TabView.LIBRARY]: '/library',
-  [TabView.VISUAL_SUMMARY]: '/visual-summary', // Mantido para compatibilidade de tipos
-  [TabView.THEMATIC_STUDY]: '/thematic-study'
-};
-
 export const NavSidebar: React.FC<NavSidebarProps> = ({ activeTab, onTabChange, onClose, t }) => {
-  const location = useLocation();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
   const navItem = (tab: TabView, icon: string, label: string) => {
-    const route = tabToRoute[tab];
-    const isActive = activeTab === tab || location.pathname === route;
+    const route = tabToPath[tab];
+    const isActive = activeTab === tab;
 
     return (
       <NavLink
         to={route}
         onClick={() => {
           onTabChange(tab);
-          onClose?.(); // Close on mobile only
+          onClose?.();
         }}
         className={`w-full flex items-center ${isCollapsed ? 'justify-center px-1' : 'space-x-3 px-3'} py-2 rounded-lg transition-all text-sm ${isActive ? 'bg-layer-3 text-bible-text font-bold shadow-md border border-bible-border/50' : 'text-bible-text font-medium hover:bg-layer-3/50'}`}
         title={isCollapsed ? label : ''}

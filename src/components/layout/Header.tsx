@@ -4,6 +4,7 @@ import { useBible } from '../../contexts/BibleContext';
 import { BibleReference } from '../../types';
 import { BIBLE_BOOKS, AVAILABLE_TRANSLATIONS } from '../../utils/constants';
 import { ThemeToggle } from '../common/ThemeToggle';
+import { usePWAInstall } from '../../hooks/usePWAInstall';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -37,6 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { user, signOut } = useAuth();
   const { bibleRef, setBibleRef, translation, setTranslation } = useBible();
+  const { canInstall, install } = usePWAInstall();
 
   const [verseInput, setVerseInput] = useState('');
   const [chapterInput, setChapterInput] = useState(bibleRef.chapter.toString());
@@ -252,6 +254,18 @@ export const Header: React.FC<HeaderProps> = ({
 
             <div className="w-px h-6 bg-bible-border mx-1"></div>
 
+            {/* Botão Instalar PWA (Desktop) */}
+            {canInstall && (
+              <button
+                onClick={install}
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-bible-text hover:bg-bible-hover transition-all"
+                title="Instalar App"
+              >
+                <i className="fas fa-download text-sm text-bible-accent"></i>
+                <span className="text-xs font-bold">Instalar App</span>
+              </button>
+            )}
+
             {/* Toggle de Tema */}
             <ThemeToggle />
 
@@ -351,6 +365,17 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <i className="fas fa-tools text-sm"></i>
             </button>
+
+            {/* Botão Instalar PWA (Mobile) */}
+            {canInstall && (
+              <button
+                onClick={install}
+                className="p-2 rounded-lg transition-all text-bible-accent hover:bg-bible-hover"
+                title="Instalar App"
+              >
+                <i className="fas fa-download text-sm"></i>
+              </button>
+            )}
 
             {/* Toggle de Tema */}
             <ThemeToggle />
