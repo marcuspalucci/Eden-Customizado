@@ -77,6 +77,20 @@ export const DevotionalView: React.FC<DevotionalViewProps> = ({
                 </>
               )}
             </button>
+            <button
+              onClick={onGetDaily}
+              disabled={loading}
+              className="flex-1 sm:flex-initial px-4 py-2 bg-bible-secondary border border-bible-border text-bible-text text-sm font-bold rounded-lg hover:border-bible-accent transition-all active:transform active:scale-95 disabled:opacity-50"
+              title="Palavra do Dia"
+            >
+              {loading ? <i className="fas fa-spinner fa-spin"></i> : (
+                <>
+                  <i className="fas fa-dove mr-1"></i>
+                  <span className="hidden sm:inline">Palavra do Dia</span>
+                  <span className="sm:hidden">Hoje</span>
+                </>
+              )}
+            </button>
           </div>
         </div>
         {error && <p className="text-red-500 text-xs mt-2">{error}</p>}

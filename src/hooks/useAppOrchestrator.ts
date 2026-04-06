@@ -427,6 +427,7 @@ export const useAppOrchestrator = () => {
 
   const handleGetDailyDevotional = useCallback(async () => {
     setFeatureError((prev) => ({ ...prev, devotional: undefined }));
+    setLoadingKey('devotional', true);
     try {
       const { data, error } = await dailyDevotionalQuery.refetch();
       if (error) {
@@ -437,6 +438,7 @@ export const useAppOrchestrator = () => {
         }));
       } else if (data) {
         setDevotionalTopic('[Devocional do Dia]');
+        setDevotionalContent(data);
         if (auth.currentUser) saveHistory('daily_devotional', 'Devocional do Dia');
       }
     } catch (e) {
@@ -445,8 +447,10 @@ export const useAppOrchestrator = () => {
         ...prev,
         devotional: 'Erro ao carregar devocional do dia. Tente novamente.',
       }));
+    } finally {
+      setLoadingKey('devotional', false);
     }
-  }, [dailyDevotionalQuery, saveHistory]);
+  }, [dailyDevotionalQuery, saveHistory, setLoadingKey]);
 
   const handleCustomMapGeneration = useCallback(async () => {
     if (!customMapQuery) return;
