@@ -9,6 +9,7 @@ interface MainLayoutProps {
   onTabChange: (tab: TabView) => void;
   t: (key: string) => string;
   onOpenProfile: () => void;
+  onOpenAdmin?: () => void;
   // Search props
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -28,6 +29,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
   onTabChange,
   t,
   onOpenProfile,
+  onOpenAdmin,
   searchQuery,
   onSearchChange,
   onSearch,
@@ -73,6 +75,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
           toggleSidebar={() => setSidebarVisible(!sidebarVisible)}
           t={t}
           onOpenProfile={onOpenProfile}
+          onOpenAdmin={onOpenAdmin}
           searchQuery={searchQuery}
           onSearchChange={onSearchChange}
           onSearch={onSearch}

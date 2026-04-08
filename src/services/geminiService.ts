@@ -446,3 +446,27 @@ export const clearStrongCache = async (): Promise<{ deleted: number; message: st
     return { deleted: data.deleted, message: data.message };
   } catch (err) { throw handleApiError(err, 'clearStrongCache'); }
 };
+
+// --- Admin: estatísticas de tokens (somente admin) ---
+export interface TokenUsageStats {
+  period: string;
+  value: string;
+  totalTokens: number;
+  totalCostUSD: number;
+  callCount: number;
+  byFunction: Record<string, { tokens: number; costUSD: number; calls: number }>;
+  byUser: Record<string, { tokens: number; costUSD: number; calls: number }>;
+  byDay: Record<string, { tokens: number; costUSD: number; calls: number }>;
+}
+
+export const getTokenUsageStats = async (
+  period: 'day' | 'month' | 'all' = 'month',
+  value?: string
+): Promise<TokenUsageStats> => {
+  try {
+    const fn = functions.httpsCallable('getTokenUsageStats');
+    const result = await fn({ period, value });
+    const data = result.data as { success: boolean } & TokenUsageStats;
+    return data;
+  } catch (err) { throw handleApiError(err, 'getTokenUsageStats'); }
+};

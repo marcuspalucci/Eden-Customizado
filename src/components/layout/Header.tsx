@@ -10,6 +10,7 @@ interface HeaderProps {
   toggleSidebar: () => void;
   t: (key: string) => string;
   onOpenProfile: () => void;
+  onOpenAdmin?: () => void;
   // Search
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -27,6 +28,7 @@ export const Header: React.FC<HeaderProps> = ({
   toggleSidebar,
   t,
   onOpenProfile,
+  onOpenAdmin,
   searchQuery,
   onSearchChange,
   onSearch,
@@ -36,7 +38,7 @@ export const Header: React.FC<HeaderProps> = ({
   compareMode,
   onToggleCompare
 }) => {
-  const { user, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const { bibleRef, setBibleRef, translation, setTranslation } = useBible();
   const { canInstall, install } = usePWAInstall();
 
@@ -321,6 +323,18 @@ export const Header: React.FC<HeaderProps> = ({
                             <i className="fas fa-cog w-5 text-bible-text-light opacity-60 text-center"></i>
                             <span>{t('settings')}</span>
                           </button>
+                          {isAdmin && onOpenAdmin && (
+                            <>
+                              <div className="h-px bg-bible-border my-1 mx-2"></div>
+                              <button
+                                onClick={() => { onOpenAdmin(); setProfileMenuOpen(false); }}
+                                className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-bible-accent hover:bg-bible-accent/10 rounded-lg transition-colors text-left"
+                              >
+                                <i className="fas fa-shield-alt w-5 text-center"></i>
+                                <span>Painel Admin</span>
+                              </button>
+                            </>
+                          )}
                           <div className="h-px bg-bible-border my-1 mx-2"></div>
                           <button
                             onClick={() => { signOut(); setProfileMenuOpen(false); }}
@@ -546,6 +560,18 @@ export const Header: React.FC<HeaderProps> = ({
                     <i className="fas fa-cog w-5 text-bible-text-light opacity-60 text-center"></i>
                     <span>{t('settings')}</span>
                   </button>
+                  {isAdmin && onOpenAdmin && (
+                    <>
+                      <div className="h-px bg-bible-border my-1 mx-2"></div>
+                      <button
+                        onClick={() => { onOpenAdmin(); setProfileMenuOpen(false); }}
+                        className="w-full flex items-center space-x-3 px-3 py-2 text-sm text-bible-accent hover:bg-bible-accent/10 rounded-lg transition-colors text-left"
+                      >
+                        <i className="fas fa-shield-alt w-5 text-center"></i>
+                        <span>Painel Admin</span>
+                      </button>
+                    </>
+                  )}
                   <div className="h-px bg-bible-border my-1 mx-2"></div>
                   <button
                     onClick={() => { signOut(); setProfileMenuOpen(false); }}

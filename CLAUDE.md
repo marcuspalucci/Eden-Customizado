@@ -56,9 +56,27 @@ functions/
 
 1. **Firestore Rules** são a causa #1 de erros "permission denied" — checar `firestore.rules` antes de suspeitar de IAM
 2. **Deploy separado:** frontend no Vercel, backend no Firebase — `npm run build && npx vercel --prod` ≠ `firebase deploy --only functions`
-3. **Modelo Gemini:** sempre `gemini-2.5-flash-lite` — `gemini-1.5-flash-001` está deprecated
+3. **Modelo Gemini:** sempre `gemini-2.5-flash-lite` para texto — `gemini-1.5-flash-001` está deprecated
 4. **NavSidebar** usa `tabToPath` importado de `useAppOrchestrator` — não duplicar o mapeamento de rotas
 5. O único erro TypeScript esperado é `AdminMaintenance.tsx` (módulo firebase não resolvido) — não bloqueia build
+
+### Regra de atualização de modelos LLM
+
+**Sempre que encontrar um modelo Gemini desatualizado em qualquer arquivo, atualize imediatamente:**
+
+| Modelo deprecated | Substituto atual |
+|---|---|
+| `gemini-1.5-flash-001` | `gemini-2.5-flash-lite` |
+| `gemini-1.5-pro-001` | `gemini-2.5-flash-preview-05-20` (para imagens) ou `gemini-2.5-flash-lite` (para texto) |
+| `gemini-1.5-pro` | `gemini-2.5-flash-lite` |
+| `gemini-1.0-pro` | `gemini-2.5-flash-lite` |
+| `gemini-2.0-flash-exp` | `gemini-2.5-flash-lite` |
+| `gemini-2.0-flash-preview-image-generation` | `gemini-2.5-flash-preview-05-20` (desligado nov/2025) |
+
+**Modelos atuais (referência):**
+- Texto/análise: `gemini-2.5-flash-lite` (padrão do projeto)
+- Imagens: `gemini-2.5-flash-preview-05-20` (via REST, `responseModalities: ["IMAGE","TEXT"]`)
+- Alto desempenho: `gemini-2.5-flash` (se custo não for problema)
 
 ---
 

@@ -11,14 +11,36 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { BrowserRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { persistQueryClient } from '@tanstack/query-persist-client-core';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 30,     // 30 min — conteúdo bíblico não muda
-      gcTime: 1000 * 60 * 60,         // 1h em memória
+      gcTime: 1000 * 60 * 60 * 24 * 7, // 7 dias — sobrevive offline
       retry: 2,
       refetchOnWindowFocus: false,
+    },
+  },
+});
+
+// Persistência no localStorage: conteúdo bíblico sobrevive ao fechar o app
+const localStoragePersister = createSyncStoragePersister({
+  storage: window.localStorage,
+  key: 'eden-query-cache',
+  throttleTime: 1000,
+});
+
+persistQueryClient({
+  queryClient,
+  persister: localStoragePersister,
+  maxAge: 1000 * 60 * 60 * 24 * 7, // 7 dias
+  dehydrateOptions: {
+    shouldDehydrateQuery: (query) => {
+      // Persistir apenas conteúdo bíblico (nunca muda)
+      const key = query.queryKey[0];
+      return key === 'bibleContent' || key === 'dailyDevotional';
     },
   },
 });

@@ -87,6 +87,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Uso de tokens — apenas o backend (admin SDK) lê e escreve
+    // O frontend nunca acessa diretamente; usa a Cloud Function getTokenUsageStats
+    match /token_usage/{docId} {
+      allow read, write: if false;
+    }
+
     // Negar acesso a qualquer outra coleção não especificada
     match /{document=**} {
       allow read, write: if false;

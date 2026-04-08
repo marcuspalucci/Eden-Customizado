@@ -45,8 +45,17 @@ export const ReadingView: React.FC<ReadingViewProps> = ({
   const primaryView = (
     <div className={`h-full overflow-y-auto p-4 md:p-8 relative text-bible-text transition-all duration-300 scrollbar-thin scrollbar-thumb-bible-border scrollbar-track-transparent ${compareMode ? 'w-full' : containerClass}`}>
       {loading && (
-        <div className="text-center py-10 animate-pulse text-bible-text-light">
-          {t('loading')}
+        <div className="animate-pulse space-y-3 py-4" aria-label={t('loading')}>
+          {/* Simula linhas de versículos */}
+          {[...Array(18)].map((_, i) => (
+            <div key={i} className="flex gap-3 items-start">
+              <div className="w-6 h-4 bg-bible-border/50 rounded shrink-0 mt-1" />
+              <div className="flex-1 space-y-1.5">
+                <div className={`h-4 bg-bible-border/50 rounded ${i % 3 === 0 ? 'w-full' : i % 3 === 1 ? 'w-5/6' : 'w-4/5'}`} />
+                {i % 4 === 0 && <div className="h-4 bg-bible-border/40 rounded w-3/4" />}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

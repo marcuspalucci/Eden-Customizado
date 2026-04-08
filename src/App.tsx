@@ -1,7 +1,8 @@
-import React, { lazy, Suspense, useEffect } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { TabView, RightPanelTab } from './types';
 import { useAppOrchestrator } from './hooks/useAppOrchestrator';
 import { FeatureErrorBoundary } from './components/common/FeatureErrorBoundary';
+import { AdminPanel } from './components/admin/AdminPanel';
 
 const ReadingView    = lazy(() => import('./components/views/ReadingView').then(m => ({ default: m.ReadingView })));
 const DevotionalView = lazy(() => import('./components/views/DevotionalView').then(m => ({ default: m.DevotionalView })));
@@ -24,6 +25,7 @@ const LoadingSpinner = () => (
 
 export const App: React.FC = () => {
   const o = useAppOrchestrator();
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   // Selection menu listener
   useEffect(() => {
@@ -57,12 +59,14 @@ export const App: React.FC = () => {
 
   return (
     <div className="contents">
+      {showAdminPanel && <AdminPanel onClose={() => setShowAdminPanel(false)} />}
       <Suspense fallback={<LoadingSpinner />}>
         <MainLayout
           activeTab={o.activeTab}
           onTabChange={o.handleTabChange}
           t={o.t}
           onOpenProfile={() => o.setShowProfileModal(true)}
+          onOpenAdmin={() => setShowAdminPanel(true)}
           searchQuery={o.searchQuery}
           onSearchChange={o.setSearchQuery}
           onSearch={o.performSearch}
